@@ -116,47 +116,8 @@ export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
 
-# Herd injected PHP 8.3 configuration.
-export HERD_PHP_83_INI_SCAN_DIR="/Users/mattsivak/Library/Application Support/Herd/config/php/83/"
-
-
-# Herd injected PHP 8.1 configuration.
-export HERD_PHP_81_INI_SCAN_DIR="/Users/mattsivak/Library/Application Support/Herd/config/php/81/"
-
-
-# Herd injected PHP 8.0 configuration.
-export HERD_PHP_80_INI_SCAN_DIR="/Users/mattsivak/Library/Application Support/Herd/config/php/80/"
-
-
-# Herd injected PHP 7.4 configuration.
-export HERD_PHP_74_INI_SCAN_DIR="/Users/mattsivak/Library/Application Support/Herd/config/php/74/"
-
-
-# Herd injected PHP binary.
-export PATH="/Users/mattsivak/Library/Application Support/Herd/bin/":$PATH
-
-
-# Herd injected PHP 8.2 configuration.
-export HERD_PHP_82_INI_SCAN_DIR="/Users/mattsivak/Library/Application Support/Herd/config/php/82/"
-
-alias a="./artisan"
-
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
-
-# Herd injected NVM configuration
-export NVM_DIR="/Users/mattsivak/Library/Application Support/Herd/config/nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-
-[[ -f "/Applications/Herd.app/Contents/Resources/config/shell/zshrc.zsh" ]] && builtin source "/Applications/Herd.app/Contents/Resources/config/shell/zshrc.zsh"
-
-# opam configuration
-[[ ! -r /Users/mattsivak/.opam/opam-init/init.zsh ]] || source /Users/mattsivak/.opam/opam-init/init.zsh  > /dev/null 2> /dev/null
-
-alias j20="export JAVA_HOME=/usr/local/opt/openjdk@20 ; java -version"
-
-export PATH=$PATH:/Users/mattsivak/.spicetify
 
 eval "$(zoxide init zsh)"
 

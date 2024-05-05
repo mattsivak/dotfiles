@@ -4,11 +4,11 @@ sudo yabai --load-sa
 yabai -m config layout bsp
 yabai -m config window_placement second_child
 
-yabai -m config top_padding    50
+yabai -m config top_padding    10
 yabai -m config bottom_padding 10
 yabai -m config left_padding   10
 yabai -m config right_padding  10
-yabai -m config window_gap     10
+yabai -m config window_gap     10 
 
 yabai -m config auto_balance on
 
@@ -31,3 +31,13 @@ yabai -m config active_window_opacity 1.0
 yabai -m config normal_window_opacity 0.9
 
 yabai -m config menubar_opacity 1.0
+
+NOTCH_UUID="37D8832A-2D66-02CA-B9F7-8F30A301B230"
+NORMAL_BAR=40
+NOTCH_BAR=10
+
+yabai -m signal --add event=display_added action="if [[ \"\$(yabai -m query --displays | jq \".[\$YABAI_DISPLAY_ID].uuid\")\" =~ \"$NOTCH_UUID\" ]]; then yabai -m config external_bar main:$NORMAL_BAR:0; elif [[ \"\$(yabai -m query --displays | jq '.[].uuid')\" =~ \"$NOTCH_UUID\" ]]; then yabai -m config external_bar main:$NORMAL_BAR:0; else yabai -m config external_bar all:$NORMAL_BAR:0; fi"
+yabai -m signal --add event=display_removed action="if [[ \"\$(yabai -m query --displays | jq \".[\$YABAI_DISPLAY_ID].uuid\")\" =~ \"$NOTCH_UUID\" ]]; then yabai -m config external_bar all:$NORMAL_BAR:0; elif [[ \"\$(yabai -m query --displays | jq '.[].uuid')\" =~ \"$NOTCH_UUID\" ]]; then yabai -m config external_bar all:$NOTCH_BAR:0; fi"
+
+# global settings
+if [[ "$(yabai -m query --displays | jq '.[].uuid')" =~ "$NOTCH_UUID" ]]; then if [ "$(yabai -m query --displays | jq length)" -gt "1" ]; then yabai -m config external_bar main:$NORMAL_BAR:0; else yabai -m config external_bar all:$NOTCH_BAR:0; fi else yabai -m config external_bar all:$NORMAL_BAR:0; fi

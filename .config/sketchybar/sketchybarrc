@@ -24,19 +24,18 @@ bar=(
 
   position=top
 
-  corner_radius=15
-  border_width=3
+  corner_radius=0
+  border_width=0
   padding_left=20
   padding_right=20
 
-  y_offset=5
-  margin=10
+  y_offset=0
+  margin=0
 
   padding_left=10
   padding_right=10
 
-  color=0xff444486
-  border_color=0xff191920
+  color=0xff000000
 )
 
 sketchybar --bar "${bar[@]}"
@@ -69,7 +68,7 @@ do
     icon="${SPACE_ICONS[i]}"
     icon.padding_left=7
     icon.padding_right=7
-    background.color=0xff6666dd
+    background.color=0xff333355
     background.corner_radius=5
     background.height=25
     label.drawing=off
