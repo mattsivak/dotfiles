@@ -122,3 +122,8 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 eval "$(zoxide init zsh)"
 
 alias cd="z"
+
+. /opt/homebrew/opt/asdf/libexec/asdf.sh
+# export PATH=/opt/homebrew/bin:/Users/mattsivak/.bun/bin:/Users/mattsivak/.asdf/shims:/opt/homebrew/opt/asdf/libexec/bin:/Users/mattsivak/.bun/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/mattsivak/.local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin
+export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init -)"

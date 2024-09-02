@@ -1,0 +1,13 @@
+import = ["~/.config/alacritty/themes/themes/challenger_deep.toml"]
+
+[window]
+padding = { x = 10, y = 10 }
+dynamic_padding = true
+decorations = "Buttonless"
+
+[selection]
+save_to_clipboard = true
+
+[font]
+normal = { family = "Hack Nerd Font Mono", style = "Regular" }
+size = 19
