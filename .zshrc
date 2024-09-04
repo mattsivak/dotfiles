@@ -123,7 +123,22 @@ eval "$(zoxide init zsh)"
 
 alias cd="z"
 
-. /opt/homebrew/opt/asdf/libexec/asdf.sh
 # export PATH=/opt/homebrew/bin:/Users/mattsivak/.bun/bin:/Users/mattsivak/.asdf/shims:/opt/homebrew/opt/asdf/libexec/bin:/Users/mattsivak/.bun/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/mattsivak/.local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin
-export PATH="$HOME/.rbenv/bin:$PATH"
-eval "$(rbenv init -)"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+#. /opt/homebrew/opt/asdf/libexec/asdf.sh
+
+export HONEYBADGER_LOGGING_PATH="/Users/mattsivak/code/work/zapfloor/hq-api/log/honeybadger_logs.txt"
+export COVERBAND_DISABLE_AUTO_START="true"
+export SKIP_SIMPLECOV="true"
+export REDIS_URL="redis://localhost:6379"
+
+. /opt/homebrew/opt/asdf/libexec/asdf.sh
+
+
+alias zapfloorhq="cd ~/code/work/zapfloor/hq-api; rails s"
+alias zapfloorhqjobs="cd ~/code/work/zapfloor/hq-api; rake jobs:work"
+alias zapflooroperator="cd ~/code/work/zapfloor/operator-client; nvm exec 18 npm run dev"

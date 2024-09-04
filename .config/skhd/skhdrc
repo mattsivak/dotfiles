@@ -160,6 +160,15 @@ alt + shift - w : yabai -m display --focus 2
 alt + shift - e : yabai -m display --focus 3
 
 alt + shift - c : yabai -m window --swap mouse
+alt + shift - m : current_state=$(yabai -m config focus_follows_mouse); \
+                  if [ "$current_state" = "disabled" ]; then \
+                    yabai -m config focus_follows_mouse autoraise; \
+                    echo "Focus follows mouse: autoraise" | tee /tmp/yabai_focus_state; \
+                  else \
+                    yabai -m config focus_follows_mouse off; \
+                    echo "Focus follows mouse: off" | tee /tmp/yabai_focus_state; \
+                  fi; \
+                  osascript -e 'display notification (do shell script "cat /tmp/yabai_focus_state") with title "Yabai Focus Mode"'
 
 # ctrl - left  : yabai -m space --focus prev
 # ctrl - right : yabai -m space --focus next
