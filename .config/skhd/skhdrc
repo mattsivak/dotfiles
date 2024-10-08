@@ -36,8 +36,8 @@ alt + shift - t : alacritty
 alt + shift - z : bash ~/.scripts/start_or_attach_zapfloor.sh
 alt + shift - u : tmux kill-session -t zapfloor
 
-alt + shift - o : yabai -m config layout bsp
-alt + shift - p : yabai -m config layout float
+alt + shift - p : bash ~/.scripts/zenity_select_layout.sh
+alt + shift - o : bash ~/.scripts/zenity_select_layout_display.sh
 
 # reload skhd and yabai
 alt + shift - r : yabai --restart-service; \

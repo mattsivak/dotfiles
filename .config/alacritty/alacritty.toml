@@ -1,4 +1,4 @@
-import = ["~/.config/alacritty/themes/themes/challenger_deep.toml"]
+import = ["~/.config/alacritty/themes/themes/ayu_dark.toml"]
 
 [window]
 padding = { x = 10, y = 10 }
