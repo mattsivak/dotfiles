@@ -9,5 +9,5 @@ decorations = "Buttonless"
 save_to_clipboard = true
 
 [font]
-normal = { family = "Hack Nerd Font Mono", style = "Regular" }
+normal = { family = "Pixel Code", style = "Regular" }
 size = 19
