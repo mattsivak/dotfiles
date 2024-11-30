@@ -9,4 +9,5 @@ export NVM_DIR="$HOME/.nvm"
 . "/Users/mattsivak/.deno/env"
 
 export PATH="$HOME/.cargo/bin:$PATH"
-
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
