@@ -14,3 +14,6 @@ source ~/.scripts/aliases.zsh
 source ~/.scripts/zapfloor_setup.zsh
 source ~/.scripts/setup_of_cli_tools.sh
 
+
+# Added by Windsurf
+export PATH="/Users/mattsivak/.codeium/windsurf/bin:$PATH"

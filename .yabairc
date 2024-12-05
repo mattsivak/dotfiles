@@ -47,5 +47,3 @@ yabai -m rule --add app="^Digital Colou?r Meter$" sticky=on
 
 yabai -m config window_animation_duration 0.15
 yabai -m config window_animation_easing easeInOutCirc
-
-borders active_color=0x#2a292ae4 inactive_color=0xff494d64 width=5.0 &
