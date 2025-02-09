@@ -45,5 +45,12 @@ if [[ "$(yabai -m query --displays | jq '.[].uuid')" =~ "$NOTCH_UUID" ]]; then i
 yabai -m rule --add app="^System Preferences$" manage=off
 yabai -m rule --add app="^Digital Colou?r Meter$" sticky=on
 
-yabai -m config window_animation_duration 0.15
+yabai -m config window_animation_duration 0.10
 yabai -m config window_animation_easing easeInOutCirc
+
+yabai -m config window_opacity on
+yabai -m config window_opacity_duration 0.15
+yabai -m config active_window_opacity 1.0
+yabai -m config normal_window_opacity 0.9
+
+yabai -m signal --add event=window_focused action="yabai -m config window_opacity on"

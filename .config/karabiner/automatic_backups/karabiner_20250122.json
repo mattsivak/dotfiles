@@ -1,0 +1,219 @@
+{
+    "machine_specific": { "krbn-8b17264a-2c27-4f2f-a032-f1aa37efb151": { "enable_multitouch_extension": true } },
+    "profiles": [
+        {
+            "complex_modifications": {
+                "rules": [
+                    {
+                        "available_since": "12.6.9",
+                        "description": "ThumbSense (rev 3)",
+                        "manipulators": [
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "multitouch_extension_finger_count_total",
+                                        "type": "variable_unless",
+                                        "value": 0
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "f",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "pointing_button": "button1" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "multitouch_extension_finger_count_total",
+                                        "type": "variable_unless",
+                                        "value": 0
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "j",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "pointing_button": "button1" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "multitouch_extension_finger_count_total",
+                                        "type": "variable_unless",
+                                        "value": 0
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "spacebar",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "pointing_button": "button1" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "multitouch_extension_finger_count_total",
+                                        "type": "variable_unless",
+                                        "value": 0
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "d",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "pointing_button": "button2" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "multitouch_extension_finger_count_total",
+                                        "type": "variable_unless",
+                                        "value": 0
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "k",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "pointing_button": "button2" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "multitouch_extension_finger_count_total",
+                                        "type": "variable_unless",
+                                        "value": 0
+                                    },
+                                    {
+                                        "keyboard_types": ["ansi", "iso"],
+                                        "type": "keyboard_type_if"
+                                    }
+                                ],
+                                "from": { "key_code": "g" },
+                                "to": [
+                                    {
+                                        "key_code": "close_bracket",
+                                        "modifiers": ["left_command"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "multitouch_extension_finger_count_total",
+                                        "type": "variable_unless",
+                                        "value": 0
+                                    },
+                                    {
+                                        "keyboard_types": ["jis"],
+                                        "type": "keyboard_type_if"
+                                    }
+                                ],
+                                "from": { "key_code": "g" },
+                                "to": [
+                                    {
+                                        "key_code": "backslash",
+                                        "modifiers": ["left_command"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "multitouch_extension_finger_count_total",
+                                        "type": "variable_unless",
+                                        "value": 0
+                                    },
+                                    {
+                                        "keyboard_types": ["ansi", "iso"],
+                                        "type": "keyboard_type_if"
+                                    }
+                                ],
+                                "from": { "key_code": "h" },
+                                "to": [
+                                    {
+                                        "key_code": "open_bracket",
+                                        "modifiers": ["left_command"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "multitouch_extension_finger_count_total",
+                                        "type": "variable_unless",
+                                        "value": 0
+                                    },
+                                    {
+                                        "keyboard_types": ["jis"],
+                                        "type": "keyboard_type_if"
+                                    }
+                                ],
+                                "from": { "key_code": "h" },
+                                "to": [
+                                    {
+                                        "key_code": "close_bracket",
+                                        "modifiers": ["left_command"]
+                                    }
+                                ],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "multitouch_extension_finger_count_total",
+                                        "type": "variable_unless",
+                                        "value": 0
+                                    }
+                                ],
+                                "from": { "key_code": "w" },
+                                "to": [
+                                    {
+                                        "key_code": "w",
+                                        "modifiers": ["left_command"]
+                                    }
+                                ],
+                                "type": "basic"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "devices": [
+                {
+                    "identifiers": {
+                        "is_keyboard": true,
+                        "product_id": 49293,
+                        "vendor_id": 1133
+                    },
+                    "ignore": true
+                },
+                {
+                    "identifiers": { "is_keyboard": true },
+                    "simple_modifications": [
+                        {
+                            "from": { "apple_vendor_top_case_key_code": "keyboard_fn" },
+                            "to": [{ "key_code": "left_control" }]
+                        },
+                        {
+                            "from": { "key_code": "left_control" },
+                            "to": [{ "apple_vendor_top_case_key_code": "keyboard_fn" }]
+                        }
+                    ]
+                }
+            ],
+            "name": "Default profile",
+            "selected": true,
+            "virtual_hid_keyboard": { "keyboard_type_v2": "ansi" }
+        }
+    ]
+}

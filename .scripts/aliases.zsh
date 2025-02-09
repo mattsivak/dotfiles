@@ -9,7 +9,7 @@ alias zapfloorhqjobs="cd ~/code/work/zapfloor/hq-api; rake jobs:work"
 alias zapflooroperator="cd ~/code/work/zapfloor/operator-client; nvm exec 18 npm run dev"
 alias zapflooroc2="cd ~/code/work/zapfloor/oc-2/; npm run dev"
 
-alias startzapfloor="tmux new-session -d -s zapfloor \; \
+alias startzapfloor="tmux rename-session zapfloor \; \
   send-keys 'cd ~/code/work/zapfloor/hq-api; rails s' C-m \; \
   split-window -v \; \
   send-keys 'cd ~/code/work/zapfloor/hq-api; rake jobs:work' C-m \; \
