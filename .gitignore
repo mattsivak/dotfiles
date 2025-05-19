@@ -1,0 +1,15 @@
+.config/alacritty/
+.config/btop/
+.config/composer/
+.config/configstore/
+.config/git/
+.config/gtk-3.0/
+.config/karabiner/
+.config/macmon.json
+.config/neofetch/
+.config/op/
+.config/psysh/
+.config/raycast/
+.config/socat/
+.config/tmux-powerline/
+.config/zed/

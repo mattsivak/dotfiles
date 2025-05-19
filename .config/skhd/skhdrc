@@ -18,13 +18,11 @@ meh - m : current_state=$(yabai -m config focus_follows_mouse); \
                     echo "Focus follows mouse: off" | tee /tmp/yabai_focus_state; \
                   fi;
 
-meh - z : bash ~/.scripts/start_or_attach_zapfloor.sh
-meh - y : bash ~/.scripts/start_or_attach_zapfloor.sh
-meh - u : tmux kill-session -t zapfloor
 meh - i : tmux list-sessions | grep -v attached | awk 'BEGIN{FS=":"}{print $1}' | xargs -n 1 tmux kill-session -t || echo No sessions to kill
 
 meh - o : bash ~/.scripts/zenity_select_layout_display.sh
 meh - p : bash ~/.scripts/zenity_select_layout_space.sh
+meh - 0x2A : bash ~/.scripts/zenity_select_opacity.sh
 
 meh - left  : yabai -m space --focus prev
 meh - right : yabai -m space --focus next
@@ -54,6 +52,12 @@ hyper - 0x1C : yabai -m window --space 8; yabai -m space --focus 8
 hyper - 0x19 : yabai -m window --space 9; yabai -m space --focus 9
 hyper - 0x1D : yabai -m window --space 9; yabai -m space --focus 10
 
+hyper - c : yabai -m window --resize left:60:0
+hyper - z : yabai -m window --resize bottom:0:-60
+hyper - x : yabai -m window --resize top:0:60
+hyper - v : yabai -m window --resize right:-60:0
+
+hyper - f : yabai -m window --toggle float
 
 # internal
 fn + ctrl - h : yabai -m window --swap west  || $(yabai -m window --display west; yabai -m display --focus west)
@@ -82,6 +86,7 @@ fn - i : tmux list-sessions | grep -v attached | awk 'BEGIN{FS=":"}{print $1}' |
 
 fn - o : bash ~/.scripts/zenity_select_layout_display.sh
 fn - p : bash ~/.scripts/zenity_select_layout_space.sh
+fn - 0x2A : bash ~/.scripts/zenity_select_opacity.sh
 
 ctrl - left  : yabai -m space --focus prev
 ctrl - right : yabai -m space --focus next
@@ -110,3 +115,6 @@ fn + ctrl - 0x1A : yabai -m window --space 7; yabai -m space --focus 7
 fn + ctrl - 0x1C : yabai -m window --space 8; yabai -m space --focus 8
 fn + ctrl - 0x19 : yabai -m window --space 9; yabai -m space --focus 9
 fn + ctrl - 0x1D : yabai -m window --space 9; yabai -m space --focus 10
+
+fn - f : yabai -m window --toggle float
+fn - a  : bash ~/.scripts/switch_frida_fullscreen.sh
