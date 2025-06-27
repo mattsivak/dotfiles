@@ -52,3 +52,5 @@ export PATH="/Users/mattsivak/.codeium/windsurf/bin:$PATH"
 
 export PATH=$HOME//opt/homebrew/Cellar/erlang/27.3.4/lib/erlang/erts-15.2.7/bin:$PATH
 export PATH=$HOME//opt/homebrew/bin:$PATH
+
+alias lightroomQOS="zsh /Users/mattsivak/.scripts/lightroom_qos.sh"

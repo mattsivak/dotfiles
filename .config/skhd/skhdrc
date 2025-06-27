@@ -58,6 +58,7 @@ hyper - x : yabai -m window --resize top:0:60
 hyper - v : yabai -m window --resize right:-60:0
 
 hyper - f : yabai -m window --toggle float
+hyper - r : yabai --restart-service
 
 # internal
 fn + ctrl - h : yabai -m window --swap west  || $(yabai -m window --display west; yabai -m display --focus west)
@@ -118,3 +119,5 @@ fn + ctrl - 0x1D : yabai -m window --space 9; yabai -m space --focus 10
 
 fn - f : yabai -m window --toggle float
 fn - a  : bash ~/.scripts/switch_frida_fullscreen.sh
+
+fn - r : yabai --restart-service

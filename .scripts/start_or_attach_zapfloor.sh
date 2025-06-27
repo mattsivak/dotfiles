@@ -9,7 +9,7 @@ else
   alacritty -e tmux new-session -d -s zapfloor \; \
     send-keys 'cd ~/code/work/zapfloor/hq-api; rails s' C-m \; \
     split-window -v \; \
-    send-keys 'cd ~/code/work/zapfloor/hq-api; rake jobs:work' C-m \; \
+    send-keys 'cd ~/code/work/zapfloor/hq-api; bundle exec rake jobs:work' C-m \; \
     split-window -h \; \
     send-keys 'cd ~/code/work/zapfloor/operator-client; nvm exec 18 npm run dev' C-m \; \
     split-window -v \; \
