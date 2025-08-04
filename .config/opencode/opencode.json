@@ -1,0 +1,62 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "openrouter": {
+      "npm": "@ai-sdk/openrouter",
+      "name": "OpenRouter",
+      "options": {
+        "baseURL": "https://openrouter.ai/api/v1"
+      },
+      "models": {
+        "qwen/qwen3-coder:free": {
+          "name": "Qwen3 Coder Free"
+        }
+      }
+    },
+    "together": {
+      "npm": "@ai-sdk/togetherai",
+      "name": "Together AI",
+      "options": {
+        "baseURL": "https://api.together.ai/v1"
+      },
+      "models": {
+        "Qwen/Qwen3-235B-A22B-Instruct-2507-tput": {
+          "name": "Qwen3 235B A22B Instruct 2507"
+        },
+        "mattsivak/Qwen-Qwen3-Coder-480B-A35B-Instruct-FP8": {
+          "name": "Qwen3 Coder 480B A35B Instruct FP8"
+        }
+      }
+    }
+  },
+  "mcp": {
+    "filesystem": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/mattsivak"
+      ],
+      "enabled": true
+    },
+    "puppeteer": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ],
+      "enabled": true
+    },
+    "git": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@cyanheads/git-mcp-server"
+      ],
+      "enabled": true
+    }
+  }
+}

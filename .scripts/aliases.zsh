@@ -9,16 +9,7 @@ alias zapfloorhqjobs="cd ~/code/work/zapfloor/hq-api; rake jobs:work"
 alias zapflooroperator="cd ~/code/work/zapfloor/operator-client; nvm exec 18 npm run dev"
 alias zapflooroc2="cd ~/code/work/zapfloor/oc-2/; npm run dev"
 
-alias startzapfloor="tmux rename-session zapfloor \; \
-  send-keys 'cd ~/code/work/zapfloor/hq-api; rails s' C-m \; \
-  split-window -v \; \
-  send-keys 'cd ~/code/work/zapfloor/hq-api; bundle exec rake jobs:work' C-m \; \
-  split-window -h \; \
-  send-keys 'cd ~/code/work/zapfloor/operator-client; nvm exec 18 npm run dev' C-m \; \
-  split-window -v \; \
-  send-keys 'cd ~/code/work/zapfloor/oc-2/; npm run dev' C-m \; \
-  select-layout tiled \; \
-  attach"
+alias startzapfloor="~/.dotfiles/.scripts/startzapfloor.sh"
 alias startzapfloord="tmux new-session -d -s zapfloor \; \
   send-keys 'cd ~/code/work/zapfloor/hq-api; rails s' C-m \; \
   split-window -v \; \
@@ -29,4 +20,6 @@ alias startzapfloord="tmux new-session -d -s zapfloor \; \
   send-keys 'cd ~/code/work/zapfloor/oc-2/; npm run dev' C-m \; \
   select-layout tiled"
 
-alias stopzapfloor="tmux kill-session -t zapfloor"
+alias stopzapfloor="tmux kill-session -t oc2; tmux kill-session -t operator-client; tmux kill-session -t user-client; tmux kill-session -t hq-api"
+
+alias stoptmux="tmux kill-server"
