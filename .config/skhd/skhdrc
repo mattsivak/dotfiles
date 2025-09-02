@@ -103,8 +103,8 @@ fn - 0x1C : yabai -m space --focus 8
 fn - 0x19 : yabai -m space --focus 9
 fn - 0x1D : yabai -m space --focus 10
 
-fn + ctrl - left  : yabai -m window --space prev; yabai -m space --focus prev
-fn + ctrl - right : yabai -m window --space next; yabai -m space --focus next
+#fn + ctrl - left  : yabai -m window --space prev; yabai -m space --focus prev
+#fn + ctrl - right : yabai -m window --space next; yabai -m space --focus next
 
 fn + ctrl - 0x12 : yabai -m window --space 1; yabai -m space --focus 1
 fn + ctrl - 0x13 : yabai -m window --space 2; yabai -m space --focus 2
@@ -118,6 +118,5 @@ fn + ctrl - 0x19 : yabai -m window --space 9; yabai -m space --focus 9
 fn + ctrl - 0x1D : yabai -m window --space 9; yabai -m space --focus 10
 
 fn - f : yabai -m window --toggle float
-fn - a  : bash ~/.scripts/switch_frida_fullscreen.sh
 
 fn - r : yabai --restart-service

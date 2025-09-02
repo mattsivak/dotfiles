@@ -1,7 +1,6 @@
 eval "$(starship init zsh)"
 
-export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
 
 export ZSH="$HOME/.oh-my-zsh"
 
@@ -17,8 +16,8 @@ source ~/.scripts/aliases.zsh
 source ~/.scripts/zapfloor_setup.zsh
 
 eval "$(zoxide init zsh)"
-export PATH="/Users/mattsivak/.rubies/ruby-3.1.4/bin/:$PATH"
-export PATH=" /Applications/Postgres.app/Contents/Versions/latest/bin/:$PATH"
+# Ruby PATH now managed by chruby auto-switching
+export PATH="/Applications/Postgres.app/Contents/Versions/latest/bin:$PATH"
 
 # Added by Windsurf
 export PATH="/Users/mattsivak/.codeium/windsurf/bin:$PATH"
@@ -54,3 +53,21 @@ export PATH=$HOME//opt/homebrew/Cellar/erlang/27.3.4/lib/erlang/erts-15.2.7/bin:
 export PATH=$HOME//opt/homebrew/bin:$PATH
 
 alias lightroomQOS="zsh /Users/mattsivak/.scripts/lightroom_qos.sh"
+
+# chruby version manager (replaces asdf for Ruby)
+source /opt/homebrew/opt/chruby/share/chruby/chruby.sh
+source /opt/homebrew/opt/chruby/share/chruby/auto.sh
+
+# opencode
+export PATH=/Users/mattsivak/.opencode/bin:$PATH
+
+export PATH="/Users/mattsivak/Library/Python/3.9/bin:$PATH"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:/Users/mattsivak/.lmstudio/bin"
+# End of LM Studio CLI section
+
