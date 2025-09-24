@@ -71,3 +71,8 @@ export NVM_DIR="$HOME/.nvm"
 export PATH="$PATH:/Users/mattsivak/.lmstudio/bin"
 # End of LM Studio CLI section
 
+export PATH="$HOME/.local/bin:$PATH"
+
+
+
+alias claude="/Users/mattsivak/.claude/local/claude"

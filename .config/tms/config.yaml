@@ -1,0 +1,94 @@
+# Directories to scan for projects
+scan_dirs:
+  - path: ~/code
+    depth: 1  # Show all direct folders in ~/code
+  - path: ~/dotfiles
+    depth: 1
+
+# Additional entry directories (always included)
+entry_dirs:
+  # Empty - we don't need these since ~/code is already in scan_dirs
+
+# Directory names to ignore when scanning
+ignore_dirs:
+  - ~/code/codecrafters  # If you want to ignore any
+  # Add more directories to ignore as needed
+
+# Default layout for new tmux sessions
+session_layout:
+  windows:
+    - name: edit
+      cmd: nvim    # Command to run in window
+    - name: term
+      cmd: ""      # Empty command opens shell
+
+# Fallback session for when killing the final session
+fallback_session:
+  name: Default
+  path: ~/tmp  # Symlinked to /tmp/mattsivak (auto-cleared on reboot)
+  layout:
+    windows:
+      - name: edit
+        cmd: nvim
+      - name: term
+        cmd: ""
+
+# Tmux configuration
+tmux_base: 1                    # Base index for tmux windows (0 or 1)
+default_depth: 1                # Default scanning depth
+tmux_session_prefix: "[TMUX] "  # Prefix for active sessions
+
+# Editor for config editing
+editor: vi
+
+# Custom work sessions (replicating startzapfloor)
+work_sessions:
+  zapfloor:
+    sessions:
+      - name: oc2
+        path: ~/code/work/oc-2
+        windows:
+          - name: edit
+            cmd: nvim
+          - name: git
+            cmd: lazygit
+          - name: test
+            cmd: npx vitest
+          - name: dev
+            cmd: npm run dev
+      
+      - name: operator-client
+        path: ~/code/work/operator-client
+        windows:
+          - name: edit
+            cmd: nvim
+          - name: git
+            cmd: lazygit
+          - name: term
+            cmd: ""
+          - name: dev
+            cmd: npm run dev
+      
+      - name: user-client
+        path: ~/code/work/user-client
+        windows:
+          - name: edit
+            cmd: nvim
+          - name: git
+            cmd: lazygit
+          - name: term
+            cmd: ""
+          - name: dev
+            cmd: npm run dev
+      
+      - name: hq-api
+        path: ~/code/work/hq-api
+        windows:
+          - name: edit
+            cmd: nvim
+          - name: git
+            cmd: lazygit
+          - name: jobs
+            cmd: bundle exec rake jobs:work
+          - name: server
+            cmd: rails s

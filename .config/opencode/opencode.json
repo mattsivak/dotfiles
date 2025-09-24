@@ -10,16 +10,6 @@
         "write": false,
         "edit": false
       }
-    },
-    "atlassian-expert": {
-      "description": "Handles Jira operations and GitHub pull requests - finding tickets, moving tickets, creating PRs, opening PRs",
-      "mode": "subagent",
-      "model": "anthropic/claude-sonnet-4-20250514",
-      "prompt": "You are an Atlassian and GitHub expert. Handle Jira ticket operations (searching, transitioning, creating, updating) and GitHub pull request management. Focus on accurate ticket tracking and PR workflows.",
-      "tools": {
-        "write": false,
-        "edit": false
-      }
     }
   },
   "mcp": {
@@ -35,30 +25,12 @@
     },
     "puppeteer": {
       "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "@modelcontextprotocol/server-puppeteer"
-      ],
+      "command": ["npx", "-y", "@modelcontextprotocol/server-puppeteer"],
       "enabled": true
     },
     "git": {
       "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "@cyanheads/git-mcp-server"
-      ],
-      "enabled": true
-    },
-    "atlassian": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "mcp-remote",
-        "https://mcp.atlassian.com/v1/sse"
-      ],
+      "command": ["npx", "-y", "@cyanheads/git-mcp-server"],
       "enabled": true
     }
   }
