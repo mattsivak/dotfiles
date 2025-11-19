@@ -76,3 +76,5 @@ export PATH="$HOME/.local/bin:$PATH"
 
 
 alias claude="/Users/mattsivak/.claude/local/claude"
+
+source /Users/mattsivak/.zshenv
