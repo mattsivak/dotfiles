@@ -60,6 +60,8 @@ hyper - v : yabai -m window --resize right:-60:0
 hyper - f : yabai -m window --toggle float
 hyper - r : yabai --restart-service
 
+hyper - w : betterdisplaycli toggle --hdr
+
 # internal
 fn + ctrl - h : yabai -m window --swap west  || $(yabai -m window --display west; yabai -m display --focus west)
 fn + ctrl - j : yabai -m window --swap south || $(yabai -m window --display south; yabai -m display --focus south)
