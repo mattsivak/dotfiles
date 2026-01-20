@@ -59,6 +59,7 @@ hyper - v : yabai -m window --resize right:-60:0
 
 hyper - f : yabai -m window --toggle float
 hyper - r : yabai --restart-service
+meh - r   : brew services restart sketchybar
 
 hyper - w : betterdisplaycli toggle --hdr
 
