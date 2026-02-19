@@ -1,3 +1,5 @@
+export PATH="$HOME/bin:$PATH"
+
 eval "$(starship init zsh)"
 
 
@@ -74,7 +76,7 @@ export PATH="$PATH:/Users/mattsivak/.lmstudio/bin"
 export PATH="$HOME/.local/bin:$PATH"
 
 
-
-alias claude="/Users/mattsivak/.claude/local/claude"
-
 source /Users/mattsivak/.zshenv
+
+# OpenClaw Completion
+source "/Users/mattsivak/.openclaw/completions/openclaw.zsh"

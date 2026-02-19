@@ -1,0 +1,137 @@
+#!/bin/bash
+# Lume Auto-Updater
+# This script checks for updates and installs them if available
+
+set -e
+
+LOG_FILE="/tmp/lume_updater.log"
+GITHUB_REPO="trycua/cua"
+
+log() {
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+}
+
+log "Starting Lume update check..."
+
+# Find lume binary location
+LUME_BIN=$(command -v lume 2>/dev/null || echo "$HOME/.local/bin/lume")
+INSTALL_DIR=$(dirname "$LUME_BIN")
+
+if [ ! -x "$LUME_BIN" ]; then
+  log "ERROR: lume binary not found at $LUME_BIN"
+  exit 1
+fi
+
+# Get current version
+CURRENT_VERSION=$("$LUME_BIN" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "0.0.0")
+log "Current version: $CURRENT_VERSION"
+
+# Get latest release tag from GitHub
+get_latest_tag() {
+  local page=1
+  local per_page=100
+  local max_pages=5
+
+  while [ $page -le $max_pages ]; do
+    local response=$(curl -s "https://api.github.com/repos/$GITHUB_REPO/releases?per_page=$per_page&page=$page")
+
+    if [ -z "$response" ]; then
+      return 1
+    fi
+
+    local tag=$(echo "$response" | grep -oE '"tag_name":\s*"lume-[^"]*"' | head -n 1 | cut -d '"' -f 4)
+
+    if [ -n "$tag" ]; then
+      echo "$tag"
+      return 0
+    fi
+
+    page=$((page + 1))
+  done
+
+  return 1
+}
+
+LATEST_TAG=$(get_latest_tag)
+if [ -z "$LATEST_TAG" ]; then
+  log "ERROR: Could not fetch latest release tag"
+  exit 1
+fi
+
+# Extract version from tag (lume-vX.Y.Z -> X.Y.Z)
+LATEST_VERSION=$(echo "$LATEST_TAG" | sed 's/lume-v//' | sed 's/lume-//')
+log "Latest version: $LATEST_VERSION"
+
+# Compare versions (simple string comparison works for semver)
+version_gt() {
+  [ "$(printf '%s\n' "$1" "$2" | sort -V | tail -n1)" = "$1" ] && [ "$1" != "$2" ]
+}
+
+apply_update() {
+  log "Downloading and applying update..."
+
+  TEMP_DIR=$(mktemp -d)
+  trap 'rm -rf "$TEMP_DIR"' EXIT
+
+  DOWNLOAD_URL="https://github.com/$GITHUB_REPO/releases/download/$LATEST_TAG/lume.tar.gz"
+
+  if curl -sL "$DOWNLOAD_URL" -o "$TEMP_DIR/lume.tar.gz"; then
+    if tar -tzf "$TEMP_DIR/lume.tar.gz" > /dev/null 2>&1; then
+      tar -xzf "$TEMP_DIR/lume.tar.gz" -C "$TEMP_DIR"
+
+      # Stop the daemon before updating
+      launchctl unload "$HOME/Library/LaunchAgents/com.trycua.lume_daemon.plist" 2>/dev/null || true
+
+      # Install new binary
+      mv "$TEMP_DIR/lume" "$INSTALL_DIR/"
+      chmod +x "$INSTALL_DIR/lume"
+
+      # Install resource bundle if it exists (contains unattended presets)
+      if [ -d "$TEMP_DIR/lume_lume.bundle" ]; then
+        rm -rf "$INSTALL_DIR/lume_lume.bundle"
+        mv "$TEMP_DIR/lume_lume.bundle" "$INSTALL_DIR/"
+        log "Resource bundle installed"
+      fi
+
+      # Restart the daemon
+      launchctl load "$HOME/Library/LaunchAgents/com.trycua.lume_daemon.plist" 2>/dev/null || true
+
+      log "Successfully updated lume to version $LATEST_VERSION"
+
+      # Show macOS notification
+      osascript -e "display notification \"Updated to version $LATEST_VERSION\" with title \"Lume Updated\"" 2>/dev/null || true
+    else
+      log "ERROR: Downloaded file is not a valid archive"
+      exit 1
+    fi
+  else
+    log "ERROR: Failed to download update"
+    exit 1
+  fi
+}
+
+if version_gt "$LATEST_VERSION" "$CURRENT_VERSION"; then
+  log "New version available: $LATEST_VERSION (current: $CURRENT_VERSION)"
+
+  case "${1:-}" in
+    --apply|--silent)
+      # Silent mode: update immediately without dialog (used by login LaunchAgent)
+      apply_update
+      ;;
+    *)
+      # Interactive mode: show dialog asking user if they want to update (used by cron)
+      RESPONSE=$(osascript -e "display dialog \"Lume $LATEST_VERSION is available (current: $CURRENT_VERSION).\" buttons {\"Later\", \"Update Now\"} default button \"Update Now\" with title \"Lume Update\"" 2>/dev/null || echo "")
+
+      if echo "$RESPONSE" | grep -q "Update Now"; then
+        log "User chose to update"
+        apply_update
+      else
+        log "User chose to skip update"
+      fi
+      ;;
+  esac
+else
+  log "Already up to date (version $CURRENT_VERSION)"
+fi
+
+log "Update check complete"

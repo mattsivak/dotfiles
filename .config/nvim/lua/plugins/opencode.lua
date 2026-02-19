@@ -7,6 +7,9 @@ return {
     ---@type opencode.Config
     opts = {
       auto_reload = true, -- Automatically reload buffers edited by opencode
+      provider = {
+        cmd = "opencode --agent personal_assistant",  -- Default to personal assistant mode
+      },
       context = { -- Context to inject in prompts
         ["@file"] = function()
           return require("opencode.context").file()
@@ -42,6 +45,7 @@ return {
       },
       { '<leader>aa', function() require('opencode').ask() end, desc = 'Ask opencode', mode = { 'n', 'v' }, },
       { '<leader>aA', function() require('opencode').ask('@file ') end, desc = 'Ask opencode about current file', mode = { 'n', 'v' }, },
+      { '<leader>ap', function() require('opencode').ask('--agent personal_assistant ') end, desc = 'Personal assistant mode', mode = { 'n', 'v' }, },
       { '<leader>ae', function() require('opencode').prompt('Explain @cursor and its context') end, desc = 'Explain code near cursor' },
       { '<leader>ar', function() require('opencode').prompt('Review @file for correctness and readability') end, desc = 'Review file', },
       { '<leader>af', function() require('opencode').prompt('Fix these @diagnostics') end, desc = 'Fix errors', },
