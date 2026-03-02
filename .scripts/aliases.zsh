@@ -1,0 +1,25 @@
+alias zshconfig="nvim ~/.zshrc"
+alias ohmyzsh="nvim ~/.oh-my-zsh"
+alias zshreload="source ~/.zshrc"
+
+alias cd="z"
+
+alias zapfloorhq="cd ~/code/work/hq-api; rails s"
+alias zapfloorhqjobs="cd ~/code/work/hq-api; rake jobs:work"
+alias zapflooroperator="cd ~/code/work/operator-client; nvm exec 18 npm run dev"
+alias zapflooroc2="cd ~/code/work/oc-2/; npm run dev"
+
+alias startzapfloor="~/dotfiles/.scripts/startzapfloor.sh"
+alias startzapfloord="tmux new-session -d -s zapfloor \; \
+  send-keys 'cd ~/code/work/hq-api; rails s' C-m \; \
+  split-window -v \; \
+  send-keys 'cd ~/code/work/hq-api; rake jobs:work' C-m \; \
+  split-window -h \; \
+  send-keys 'cd ~/code/work/operator-client; nvm exec 18 npm run dev' C-m \; \
+  split-window -v \; \
+  send-keys 'cd ~/code/work/oc-2/; npm run dev' C-m \; \
+  select-layout tiled"
+
+alias stopzapfloor="tmux kill-session -t oc2; tmux kill-session -t operator-client; tmux kill-session -t user-client; tmux kill-session -t hq-api"
+
+alias stoptmux="tmux kill-server"

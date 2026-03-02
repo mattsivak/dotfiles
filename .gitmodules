@@ -1,0 +1,9 @@
+[submodule ".tmux/plugins/tpm"]
+	path = .tmux/plugins/tpm
+	url = https://github.com/tmux-plugins/tpm
+[submodule ".tmux/plugins/minimal-tmux-status"]
+	path = .tmux/plugins/minimal-tmux-status
+	url = https://github.com/niksingh710/minimal-tmux-status
+[submodule ".tmux/plugins/tmux-window-switcher"]
+	path = .tmux/plugins/tmux-window-switcher
+	url = https://github.com/l-lin/tmux-window-switcher
