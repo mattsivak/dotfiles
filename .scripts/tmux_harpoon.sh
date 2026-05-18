@@ -84,3 +84,14 @@ harpoon_jump() {
   tmux switch-client -t "$sess"
   tmux select-window -t "$sess:$win"
 }
+
+# Remove slot N (rewrites the file normalized: trimmed, blank-free).
+harpoon_delete() {
+  local n="${1:-}" f tmp
+  [[ "$n" =~ ^[0-9]+$ ]] || return 1
+  f="$(_harpoon_file)"
+  tmp="$(mktemp "$(dirname -- "$f")/.harpoon.XXXXXX")" || return 1
+  trap 'rm -f "$tmp"' RETURN
+  harpoon_slots | sed "${n}d" > "$tmp" || return 1
+  mv "$tmp" "$f"
+}

@@ -378,6 +378,21 @@ harpoon_add "a:1"; harpoon_add "b:2"; harpoon_add "c:3"
 harpoon_delete 2
 assert_eq "delete removes correct row" $'a:1\nc:3' "$(harpoon_slots)"
 teardown
+
+# --- delete out-of-range is a no-op ---
+setup
+harpoon_add "a:1"; harpoon_add "b:2"
+harpoon_delete 9
+assert_eq "delete out-of-range no-op" $'a:1\nb:2' "$(harpoon_slots)"
+teardown
+
+# --- delete non-numeric arg returns nonzero, list untouched ---
+setup
+harpoon_add "a:1"
+if harpoon_delete x 2>/dev/null; then rc=0; else rc=1; fi
+assert_eq "delete non-numeric nonzero" "1" "$rc"
+assert_eq "delete non-numeric no-op" "a:1" "$(harpoon_slots)"
+teardown
 ```
 
 - [ ] **Step 2: Run, verify it fails**
@@ -394,11 +409,15 @@ In `tmux_harpoon.sh`, add after `harpoon_jump`:
 harpoon_delete() {
   local n="${1:-}" f tmp
   [[ "$n" =~ ^[0-9]+$ ]] || return 1
-  f="$(_harpoon_file)"; tmp="$(mktemp)"
-  harpoon_slots | sed "${n}d" > "$tmp"
+  f="$(_harpoon_file)"
+  tmp="$(mktemp "$(dirname -- "$f")/.harpoon.XXXXXX")" || return 1
+  trap 'rm -f "$tmp"' RETURN
+  harpoon_slots | sed "${n}d" > "$tmp" || return 1
   mv "$tmp" "$f"
 }
 ```
+
+(Rationale: temp file co-located with the list so `mv` is a guaranteed atomic same-dir rename even for a custom `TMUX_HARPOON_FILE`; `trap ... RETURN` guarantees the temp is cleaned up on every exit path including a failed `mv`.)
 
 - [ ] **Step 4: Run, verify it passes**
 

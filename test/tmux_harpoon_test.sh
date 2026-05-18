@@ -107,5 +107,27 @@ assert_contains "jump stale messages" "harpoon: target gone" "$err"
 assert_eq "jump stale no tmux calls" "" "$(cat "$TMUX_CALLS")"
 teardown
 
+# --- delete ---
+setup
+harpoon_add "a:1"; harpoon_add "b:2"; harpoon_add "c:3"
+harpoon_delete 2
+assert_eq "delete removes correct row" $'a:1\nc:3' "$(harpoon_slots)"
+teardown
+
+# --- delete out-of-range is a no-op ---
+setup
+harpoon_add "a:1"; harpoon_add "b:2"
+harpoon_delete 9
+assert_eq "delete out-of-range no-op" $'a:1\nb:2' "$(harpoon_slots)"
+teardown
+
+# --- delete non-numeric arg returns nonzero, list untouched ---
+setup
+harpoon_add "a:1"
+if harpoon_delete x 2>/dev/null; then rc=0; else rc=1; fi
+assert_eq "delete non-numeric nonzero" "1" "$rc"
+assert_eq "delete non-numeric no-op" "a:1" "$(harpoon_slots)"
+teardown
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [[ $fail -eq 0 ]]
