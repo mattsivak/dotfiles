@@ -79,5 +79,33 @@ setup
 assert_eq "render empty list is empty" "" "$(harpoon_render)"
 teardown
 
+# --- jump success ---
+setup
+export FAKE_WINDOWS="hq-api:server"
+harpoon_add "hq-api:server"
+harpoon_jump 1
+assert_eq "jump emits switch-client" "switch-client -t hq-api" \
+  "$(sed -n 1p "$TMUX_CALLS")"
+assert_eq "jump emits select-window" "select-window -t hq-api:server" \
+  "$(sed -n 2p "$TMUX_CALLS")"
+teardown
+
+# --- jump out of range ---
+setup
+harpoon_add "hq-api:server"
+if harpoon_jump 5 2>/dev/null; then rc=0; else rc=1; fi
+assert_eq "jump out-of-range nonzero" "1" "$rc"
+teardown
+
+# --- jump stale target ---
+setup
+export FAKE_WINDOWS=""
+harpoon_add "hq-api:server"
+err="$(harpoon_jump 1 2>&1)"; rc=$?
+assert_eq "jump stale nonzero" "1" "$rc"
+assert_contains "jump stale messages" "harpoon: target gone" "$err"
+assert_eq "jump stale no tmux calls" "" "$(cat "$TMUX_CALLS")"
+teardown
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [[ $fail -eq 0 ]]

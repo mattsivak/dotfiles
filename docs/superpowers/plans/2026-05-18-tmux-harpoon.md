@@ -307,8 +307,9 @@ teardown
 setup
 export FAKE_WINDOWS=""
 harpoon_add "hq-api:server"
-if harpoon_jump 1 2>/dev/null; then rc=0; else rc=1; fi
+err="$(harpoon_jump 1 2>&1)"; rc=$?
 assert_eq "jump stale nonzero" "1" "$rc"
+assert_contains "jump stale messages" "harpoon: target gone" "$err"
 assert_eq "jump stale no tmux calls" "" "$(cat "$TMUX_CALLS")"
 teardown
 ```

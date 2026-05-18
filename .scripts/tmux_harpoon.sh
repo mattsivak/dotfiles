@@ -64,3 +64,23 @@ harpoon_render() {
     printf '%d\t%3d  %s %s\n' "$i" "$i" "$(harpoon_marker "$line")" "$line"
   done < <(harpoon_slots)
 }
+
+_harpoon_msg() { printf '%s\n' "$*" >&2; }
+
+# Switch to slot N. Returns nonzero (and messages) if N is invalid,
+# out of range, or the target window no longer exists.
+harpoon_jump() {
+  local n="${1:-}" target sess win
+  [[ "$n" =~ ^[0-9]+$ ]] || { _harpoon_msg "harpoon: invalid slot '$n'"; return 1; }
+  target="$(harpoon_slots | sed -n "${n}p")"
+  [[ -n "$target" ]] || { _harpoon_msg "harpoon: no slot $n"; return 1; }
+  # split on the FIRST colon: session names cannot contain ':', window names can
+  sess="${target%%:*}"; win="${target#*:}"
+  if ! tmux list-windows -t "$sess" -F '#{window_name}' 2>/dev/null \
+        | grep -Fxq -- "$win"; then
+    _harpoon_msg "harpoon: target gone → $target"
+    return 1
+  fi
+  tmux switch-client -t "$sess"
+  tmux select-window -t "$sess:$win"
+}
