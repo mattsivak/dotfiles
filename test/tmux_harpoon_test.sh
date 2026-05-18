@@ -27,10 +27,15 @@ setup() {
 # Fake tmux. FAKE_WINDOWS="sess:win sess:win2" = windows that exist.
 # FAKE_ORIGIN = what `display-message -p` resolves to (the popup origin).
 case "$1" in
-  list-windows)            # list-windows -t SESS -F '#{window_name}'
-    sess="$3"
+  list-windows)            # -t SESS -F '<fmt>'  (synthetic ids @1,@2,… per session)
+    sess="$3"; idx=0
     for pair in $FAKE_WINDOWS; do
-      [[ "${pair%%:*}" == "$sess" ]] && printf '%s\n' "${pair#*:}"
+      [[ "${pair%%:*}" == "$sess" ]] || continue
+      idx=$((idx+1)); name="${pair#*:}"
+      case "$*" in
+        *window_id*) printf '@%d\t%s\n' "$idx" "$name" ;;
+        *)           printf '%s\n' "$name" ;;
+      esac
     done ;;
   display-message)         # display-message -p '#{session_name}:#{window_name}'
     printf '%s\n' "${FAKE_ORIGIN:-}" ;;
@@ -90,7 +95,18 @@ harpoon_add "hq-api:server"
 harpoon_jump 1
 assert_eq "jump emits switch-client" "switch-client -t hq-api" \
   "$(sed -n 1p "$TMUX_CALLS")"
-assert_eq "jump emits select-window" "select-window -t hq-api:server" \
+assert_eq "jump selects by window id" "select-window -t @1" \
+  "$(sed -n 2p "$TMUX_CALLS")"
+teardown
+
+# --- jump resolves a window name containing dots via window id ---
+setup
+export FAKE_WINDOWS="temp:2.1.143"
+harpoon_add "temp:2.1.143"
+harpoon_jump 1
+assert_eq "jump dotted-name switch-client" "switch-client -t temp" \
+  "$(sed -n 1p "$TMUX_CALLS")"
+assert_eq "jump dotted-name selects by id" "select-window -t @1" \
   "$(sed -n 2p "$TMUX_CALLS")"
 teardown
 

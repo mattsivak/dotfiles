@@ -87,13 +87,19 @@ harpoon_jump() {
   [[ -n "$target" ]] || { _harpoon_msg "harpoon: no slot $n"; return 1; }
   # split on the FIRST colon: session names cannot contain ':', window names can
   sess="${target%%:*}"; win="${target#*:}"
-  if ! tmux list-windows -t "$sess" -F '#{window_name}' 2>/dev/null \
-        | grep -Fxq -- "$win"; then
+  # Resolve the name to an unambiguous window id: window names may contain
+  # '.' or ':' which tmux's session:window.pane target grammar misparses
+  # (e.g. a window named "2.1.143" → "can't find pane: 1.143"). This also
+  # serves as the existence check (empty id ⇒ gone).
+  local wid
+  wid="$(tmux list-windows -t "$sess" -F '#{window_id}'$'\t''#{window_name}' 2>/dev/null \
+          | awk -F '\t' -v w="$win" '$2==w{print $1; exit}')"
+  if [[ -z "$wid" ]]; then
     _harpoon_msg "harpoon: target gone → $target"
     return 1
   fi
   tmux switch-client -t "$sess"
-  tmux select-window -t "$sess:$win"
+  tmux select-window -t "$wid"
 }
 
 # Remove slot N (rewrites the file normalized: trimmed, blank-free).

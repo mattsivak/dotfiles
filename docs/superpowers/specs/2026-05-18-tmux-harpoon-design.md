@@ -69,13 +69,18 @@ tmux-harpoon ──────────────────────�
 
 For slot N's `sess:win`:
 
-- Session exists and window exists →
-  `tmux switch-client -t <sess> \; select-window -t <sess>:<win>`,
+- Session exists and the stored name resolves to a live window →
+  `tmux switch-client -t <sess>` then `select-window -t <window_id>`,
   then exit (popup closes via `-E`).
 - Target missing → brief in-popup message; stay open.
 
-Window resolved by **name**. If a session has duplicate window names, the
-first match wins (documented limitation; acceptable for a curated focus list).
+The stored `win` is matched **by exact name**, then resolved to the live
+`#{window_id}` (e.g. `@79`) and selected by that id — never by rebuilding
+a `sess:name` target string. This is required because window names can
+contain `.` or `:`, which tmux's `session:window.pane` target grammar
+would misparse (a window named `2.1.143` → `can't find pane: 1.143`).
+Empty id ⇒ treated as gone. If a session has duplicate window names, the
+first match wins (documented limitation; acceptable for a curated list).
 
 ## Out of scope (YAGNI)
 
