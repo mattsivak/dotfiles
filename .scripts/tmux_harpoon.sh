@@ -4,7 +4,9 @@
 # Bound in ~/.tmux.conf:
 #   unbind u
 #   bind u display-popup -E -x C -y C -w 80% -h 70% \
-#     "~/dotfiles/.scripts/tmux_harpoon.sh '#{session_name}' '#{window_name}'"
+#     "~/dotfiles/.scripts/tmux_harpoon.sh"
+# (tmux does NOT expand #{...} in a display-popup shell-command, so the
+#  origin session:window is resolved inside the script via display-message.)
 #
 # One global list at $TMUX_HARPOON_FILE (default
 # ${XDG_DATA_HOME:-~/.local/share}/tmux-harpoon/list), one `session:window` per line, line
@@ -35,6 +37,8 @@ harpoon_add() {
   target="${target#"${target%%[![:space:]]*}"}"   # ltrim
   target="${target%"${target##*[![:space:]]}"}"    # rtrim
   [[ -n "$target" ]] || return 0
+  case "$target" in *'#{'*) return 0 ;; esac           # reject unexpanded tmux format
+  [[ "$target" == *:* ]] || return 0                   # must be session:window
   harpoon_slots | grep -Fxq -- "$target" && return 0   # dedupe
   local f; f="$(_harpoon_file)"
   # ensure existing content ends with a newline before appending
@@ -66,6 +70,13 @@ harpoon_render() {
 }
 
 _harpoon_msg() { printf '%s\n' "$*" >&2; }
+
+# session:window of the client that opened the popup. tmux does NOT expand
+# #{...} in a display-popup shell-command, so the origin must be resolved
+# here rather than passed in as an argument.
+_harpoon_origin() {
+  tmux display-message -p '#{session_name}:#{window_name}' 2>/dev/null || true
+}
 
 # Switch to slot N. Returns nonzero (and messages) if N is invalid,
 # out of range, or the target window no longer exists.
@@ -114,7 +125,7 @@ _harpoon_deps() {
 # `become` replaces fzf with `<self> jump N`; on success the tmux switch
 # runs and the script exits, so display-popup -E tears the popup down.
 _harpoon_popup() {
-  export TMUX_HARPOON_ORIGIN="${1}:${2}"
+  export TMUX_HARPOON_ORIGIN="$(_harpoon_origin)"
   local self="${BASH_SOURCE[0]}" file i
   file="$(_harpoon_file)"
   local -a binds=(
@@ -136,7 +147,7 @@ _harpoon_popup() {
 
 _harpoon_main() {
   case "${1:-}" in
-    add)     harpoon_add "${TMUX_HARPOON_ORIGIN:-}" ;;
+    add)     harpoon_add "${TMUX_HARPOON_ORIGIN:-$(_harpoon_origin)}" ;;
     jump)    if ! harpoon_jump "${2:-}"; then
                [[ -t 0 ]] && read -r -p "press enter to close..." _
                exit 1
@@ -144,7 +155,7 @@ _harpoon_main() {
     delete)  harpoon_delete "${2:-}" ;;
     _render) harpoon_render ;;
     *)       _harpoon_deps || { read -r -p "press enter to close..." _; exit 1; }
-             _harpoon_popup "${1:-}" "${2:-}" ;;
+             _harpoon_popup ;;
   esac
 }
 

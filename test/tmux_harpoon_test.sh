@@ -20,16 +20,20 @@ setup() {
   export TMUX_HARPOON_FILE="$TMPD/list"
   export TMUX_CALLS="$TMPD/calls"; : > "$TMUX_CALLS"
   export FAKE_WINDOWS=""
+  export FAKE_ORIGIN=""
   mkdir -p "$TMPD/bin"
   cat > "$TMPD/bin/tmux" <<'SHIM'
 #!/usr/bin/env bash
 # Fake tmux. FAKE_WINDOWS="sess:win sess:win2" = windows that exist.
+# FAKE_ORIGIN = what `display-message -p` resolves to (the popup origin).
 case "$1" in
   list-windows)            # list-windows -t SESS -F '#{window_name}'
     sess="$3"
     for pair in $FAKE_WINDOWS; do
       [[ "${pair%%:*}" == "$sess" ]] && printf '%s\n' "${pair#*:}"
     done ;;
+  display-message)         # display-message -p '#{session_name}:#{window_name}'
+    printf '%s\n' "${FAKE_ORIGIN:-}" ;;
   switch-client|select-window)
     printf '%s %s %s\n' "$1" "$2" "$3" >> "$TMUX_CALLS" ;;
 esac
@@ -139,6 +143,32 @@ bash "$SCRIPT" jump 1
 assert_eq "exec: jump switch-client" "switch-client -t hq-api" "$(sed -n 1p "$TMUX_CALLS")"
 bash "$SCRIPT" delete 1
 assert_eq "exec: delete empties list" "" "$(harpoon_slots)"
+teardown
+
+# --- add rejects an unexpanded tmux format (display-popup doesn't expand it) ---
+setup
+harpoon_add '#{session_name}:#{window_name}'
+assert_eq "add rejects unexpanded #{} format" "" "$(harpoon_slots)"
+teardown
+
+# --- add rejects a value with no colon (must be session:window) ---
+setup
+harpoon_add "notacolonpair"
+assert_eq "add rejects colon-less value" "" "$(harpoon_slots)"
+teardown
+
+# --- _harpoon_origin resolves via tmux display-message ---
+setup
+export FAKE_ORIGIN="lm8352-operator-client:nvim"
+assert_eq "_harpoon_origin from tmux" "lm8352-operator-client:nvim" "$(_harpoon_origin)"
+teardown
+
+# --- exec add self-resolves origin via tmux when env is unset (real popup path) ---
+setup
+unset TMUX_HARPOON_ORIGIN
+export FAKE_ORIGIN="hq-api:server"
+bash "$SCRIPT" add
+assert_eq "exec: add self-resolves origin" "hq-api:server" "$(harpoon_slots)"
 teardown
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"

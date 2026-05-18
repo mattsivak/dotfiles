@@ -100,6 +100,14 @@ first match wins (documented limitation; acceptable for a curated focus list).
 - `display-popup -E` runs the script attached to the calling client;
   `switch-client`/`select-window` target that client (same pattern as the
   existing `tx`/`tms` popups, known-good).
+- **tmux does NOT expand `#{...}` in a `display-popup` shell-command**
+  (only in option args like `-d`/`-T`). The origin `session:window` is
+  therefore resolved inside the script via
+  `tmux display-message -p '#{session_name}:#{window_name}'`, not passed as
+  a binding argument. `harpoon_add` also rejects values containing `#{` or
+  lacking a colon (defense in depth so a bad origin can never be persisted).
+  (Post-merge correction: the original plan passed format args to the
+  script, which tmux left literal; fixed by self-resolving the origin.)
 - fzf is already a hard dependency of the user's tmux setup.
 - `--clean` nvim was benchmarked ~3x faster (~29ms vs ~90ms) but the user
   chose the full config for muscle-memory; the extensionless-file safeguard

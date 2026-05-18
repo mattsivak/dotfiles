@@ -4,7 +4,7 @@
 
 **Goal:** A harpoon-style, manually-curated focus list for tmux, bound to `prefix+u`, that lets the user pin `session:window` targets and flip between them from one fzf popup.
 
-**Architecture:** A single sourceable bash script (`tmux_harpoon.sh`) holding pure list functions (add/slots/marker/render/jump/delete) plus a popup driver. Pure functions are unit-tested against a fake `tmux` on `PATH`; the fzf/popup layer is wired in one integration task and verified manually. tmux glue in `.tmux.conf` invokes it via `display-popup -E`, passing the origin `session`/`window` as FORMAT-expanded args.
+**Architecture:** A single sourceable bash script (`tmux_harpoon.sh`) holding pure list functions (add/slots/marker/render/jump/delete) plus a popup driver. Pure functions are unit-tested against a fake `tmux` on `PATH`; the fzf/popup layer is wired in one integration task and verified manually. tmux glue in `.tmux.conf` invokes it via `display-popup -E`; the script resolves the origin `session:window` itself via `tmux display-message` (tmux does NOT expand `#{...}` in a display-popup shell-command). [Post-merge correction — see spec Risks/notes.]
 
 **Tech Stack:** bash, fzf, tmux 3.x, nvim (user's full LazyVim config for the `e` edit action). Tests: plain bash runner (no bats/shellcheck — not installed in this repo).
 
@@ -131,7 +131,9 @@ Create `~/dotfiles/.scripts/tmux_harpoon.sh`:
 # Bound in ~/.tmux.conf:
 #   unbind u
 #   bind u display-popup -E -x C -y C -w 80% -h 70% \
-#     "~/dotfiles/.scripts/tmux_harpoon.sh '#{session_name}' '#{window_name}'"
+#     "~/dotfiles/.scripts/tmux_harpoon.sh"
+# (tmux does NOT expand #{...} in a display-popup shell-command, so the
+#  origin session:window is resolved inside the script via display-message.)
 #
 # One global list at $TMUX_HARPOON_FILE (default
 # ${XDG_DATA_HOME:-~/.local/share}/tmux-harpoon/list), one `session:window` per line, line
@@ -520,7 +522,7 @@ Expected: `9 passed, 0 failed`; `_render` prints nothing (empty list) with `rc=0
 
 - [ ] **Step 3: Manual popup smoke test (inside a real tmux session)**
 
-Run: `~/dotfiles/.scripts/tmux_harpoon.sh "$(tmux display -p '#{session_name}')" "$(tmux display -p '#{window_name}')"`
+Run: `~/dotfiles/.scripts/tmux_harpoon.sh` (no args — the script self-resolves the origin via `tmux display-message`)
 Verify, in order:
 1. fzf popup opens with header `1-9 jump · enter jump · a add · d delete · e edit · q quit`.
 2. Press `a` → current `session:window` appears as row `1 ●`.
@@ -562,10 +564,10 @@ Insert immediately **after** that block:
 ```
 
 # tmux-harpoon — curated focus list of session:window targets (prefix u).
-# Origin session/window are FORMAT-expanded before the popup runs so `a`
-# (add current) records the right target.
+# The script resolves the origin session:window itself (tmux does NOT
+# expand #{...} in a display-popup shell-command), so no args are passed.
 unbind u
-bind u display-popup -E -x C -y C -w 80% -h 70% "~/dotfiles/.scripts/tmux_harpoon.sh '#{session_name}' '#{window_name}'"
+bind u display-popup -E -x C -y C -w 80% -h 70% "~/dotfiles/.scripts/tmux_harpoon.sh"
 ```
 
 - [ ] **Step 2: Reload tmux config**
