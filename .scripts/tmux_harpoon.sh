@@ -41,3 +41,26 @@ harpoon_add() {
   [[ -s "$f" && -n "$(tail -c1 "$f")" ]] && printf '\n' >> "$f"
   printf '%s\n' "$target" >> "$f"
 }
+
+# ● if session:window currently exists, ✗ otherwise (stale, kept).
+harpoon_marker() {
+  local target="$1" sess win
+  # split on the FIRST colon: session names cannot contain ':', window names can
+  sess="${target%%:*}"; win="${target#*:}"
+  if tmux list-windows -t "$sess" -F '#{window_name}' 2>/dev/null \
+       | grep -Fxq -- "$win"; then
+    printf '●'
+  else
+    printf '✗'
+  fi
+}
+
+# Tab-delimited rows for fzf: "<N>\t<padded display>".
+harpoon_render() {
+  local i=0 line
+  while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+    i=$((i+1))
+    printf '%d\t%3d  %s %s\n' "$i" "$i" "$(harpoon_marker "$line")" "$line"
+  done < <(harpoon_slots)
+}

@@ -209,6 +209,18 @@ out="$(harpoon_render)"
 assert_contains "render present marker" $'1\t  1  ● hq-api:server' "$out"
 assert_contains "render stale marker"   $'2\t  2  ✗ dev-env:logs' "$out"
 teardown
+
+# --- render handles a window name containing a colon (split on first colon) ---
+setup
+export FAKE_WINDOWS="sess:my:win"
+harpoon_add "sess:my:win"
+assert_contains "render colon-in-winname" $'1\t  1  ● sess:my:win' "$(harpoon_render)"
+teardown
+
+# --- render on an empty list emits nothing ---
+setup
+assert_eq "render empty list is empty" "" "$(harpoon_render)"
+teardown
 ```
 
 - [ ] **Step 2: Run, verify it fails**
@@ -224,6 +236,7 @@ In `tmux_harpoon.sh`, add after `harpoon_add`:
 # ● if session:window currently exists, ✗ otherwise (stale, kept).
 harpoon_marker() {
   local target="$1" sess win
+  # split on the FIRST colon: session names cannot contain ':', window names can
   sess="${target%%:*}"; win="${target#*:}"
   if tmux list-windows -t "$sess" -F '#{window_name}' 2>/dev/null \
        | grep -Fxq -- "$win"; then

@@ -57,5 +57,27 @@ assert_eq "add does not merge lines w/o trailing newline" \
   $'hq-api:server\noperator-client:nvim' "$(harpoon_slots)"
 teardown
 
+# --- render + marker ---
+setup
+export FAKE_WINDOWS="hq-api:server"
+harpoon_add "hq-api:server"
+harpoon_add "dev-env:logs"
+out="$(harpoon_render)"
+assert_contains "render present marker" $'1\t  1  ● hq-api:server' "$out"
+assert_contains "render stale marker"   $'2\t  2  ✗ dev-env:logs' "$out"
+teardown
+
+# --- render handles a window name containing a colon (split on first colon) ---
+setup
+export FAKE_WINDOWS="sess:my:win"
+harpoon_add "sess:my:win"
+assert_contains "render colon-in-winname" $'1\t  1  ● sess:my:win' "$(harpoon_render)"
+teardown
+
+# --- render on an empty list emits nothing ---
+setup
+assert_eq "render empty list is empty" "" "$(harpoon_render)"
+teardown
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [[ $fail -eq 0 ]]
