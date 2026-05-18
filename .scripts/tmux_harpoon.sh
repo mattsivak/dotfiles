@@ -91,7 +91,64 @@ harpoon_delete() {
   [[ "$n" =~ ^[0-9]+$ ]] || return 1
   f="$(_harpoon_file)"
   tmp="$(mktemp "$(dirname -- "$f")/.harpoon.XXXXXX")" || return 1
-  trap 'rm -f "$tmp"' RETURN
-  harpoon_slots | sed "${n}d" > "$tmp" || return 1
-  mv "$tmp" "$f"
+  if harpoon_slots | sed "${n}d" > "$tmp"; then
+    mv "$tmp" "$f"
+  else
+    rm -f "$tmp"
+    return 1
+  fi
 }
+
+_harpoon_deps() {
+  local missing=() dep
+  for dep in fzf nvim tmux; do
+    command -v "$dep" >/dev/null 2>&1 || missing+=("$dep")
+  done
+  if (( ${#missing[@]} )); then
+    printf 'tmux-harpoon: missing dependency: %s\n' "${missing[*]}" >&2
+    return 1
+  fi
+}
+
+# fzf popup. Search disabled (curated list → digits act as jumps).
+# `become` replaces fzf with `<self> jump N`; on success the tmux switch
+# runs and the script exits, so display-popup -E tears the popup down.
+_harpoon_popup() {
+  export TMUX_HARPOON_ORIGIN="${1}:${2}"
+  local self="${BASH_SOURCE[0]}" file i
+  file="$(_harpoon_file)"
+  local -a binds=(
+    "--bind=enter:become(\"$self\" jump {1})"
+    "--bind=a:execute-silent(\"$self\" add)+reload(\"$self\" _render)"
+    "--bind=d:execute-silent(\"$self\" delete {1})+reload(\"$self\" _render)"
+    "--bind=e:execute(nvim \"$file\")+reload(\"$self\" _render)"
+    "--bind=q:abort"
+  )
+  for i in 1 2 3 4 5 6 7 8 9; do
+    binds+=("--bind=$i:become(\"$self\" jump $i)")
+  done
+  harpoon_render | fzf \
+    --ansi --no-sort --no-info --reverse --height=100% --disabled \
+    --delimiter=$'\t' --with-nth=2 --prompt='harpoon> ' \
+    --header='1-9 jump · enter jump · a add · d delete · e edit · q quit' \
+    "${binds[@]}" || true
+}
+
+_harpoon_main() {
+  case "${1:-}" in
+    add)     harpoon_add "${TMUX_HARPOON_ORIGIN:-}" ;;
+    jump)    if ! harpoon_jump "${2:-}"; then
+               [[ -t 0 ]] && read -r -p "press enter to close..." _
+               exit 1
+             fi ;;
+    delete)  harpoon_delete "${2:-}" ;;
+    _render) harpoon_render ;;
+    *)       _harpoon_deps || { read -r -p "press enter to close..." _; exit 1; }
+             _harpoon_popup "${1:-}" "${2:-}" ;;
+  esac
+}
+
+# (paired with the strict-mode guard at the top) run main only when executed
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  _harpoon_main "$@"
+fi

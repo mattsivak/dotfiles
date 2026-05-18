@@ -411,13 +411,16 @@ harpoon_delete() {
   [[ "$n" =~ ^[0-9]+$ ]] || return 1
   f="$(_harpoon_file)"
   tmp="$(mktemp "$(dirname -- "$f")/.harpoon.XXXXXX")" || return 1
-  trap 'rm -f "$tmp"' RETURN
-  harpoon_slots | sed "${n}d" > "$tmp" || return 1
-  mv "$tmp" "$f"
+  if harpoon_slots | sed "${n}d" > "$tmp"; then
+    mv "$tmp" "$f"
+  else
+    rm -f "$tmp"
+    return 1
+  fi
 }
 ```
 
-(Rationale: temp file co-located with the list so `mv` is a guaranteed atomic same-dir rename even for a custom `TMUX_HARPOON_FILE`; `trap ... RETURN` guarantees the temp is cleaned up on every exit path including a failed `mv`.)
+(Rationale: temp file co-located with the list so `mv` is a guaranteed atomic same-dir rename even for a custom `TMUX_HARPOON_FILE`; explicit `rm -f` on the failure path cleans up the temp with no global trap leak — `trap RETURN` in bash is shell-global, not function-local, and would fire on every subsequent return after the function runs once, causing `unbound variable` errors under `set -u`.)
 
 - [ ] **Step 4: Run, verify it passes**
 
@@ -488,6 +491,7 @@ _harpoon_main() {
     add)     harpoon_add "${TMUX_HARPOON_ORIGIN:-}" ;;
     jump)    if ! harpoon_jump "${2:-}"; then
                [[ -t 0 ]] && read -r -p "press enter to close..." _
+               exit 1
              fi ;;
     delete)  harpoon_delete "${2:-}" ;;
     _render) harpoon_render ;;
@@ -496,6 +500,7 @@ _harpoon_main() {
   esac
 }
 
+# (paired with the strict-mode guard at the top) run main only when executed
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   _harpoon_main "$@"
 fi

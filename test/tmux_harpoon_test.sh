@@ -129,5 +129,17 @@ assert_eq "delete non-numeric nonzero" "1" "$rc"
 assert_eq "delete non-numeric no-op" "a:1" "$(harpoon_slots)"
 teardown
 
+# --- executed subcommand dispatch (exec guard + _harpoon_main) ---
+setup
+export FAKE_WINDOWS="hq-api:server"
+TMUX_HARPOON_ORIGIN="hq-api:server" bash "$SCRIPT" add
+assert_eq "exec: add appends via origin" "hq-api:server" "$(harpoon_slots)"
+assert_contains "exec: _render output" $'1\t  1  ● hq-api:server' "$(bash "$SCRIPT" _render)"
+bash "$SCRIPT" jump 1
+assert_eq "exec: jump switch-client" "switch-client -t hq-api" "$(sed -n 1p "$TMUX_CALLS")"
+bash "$SCRIPT" delete 1
+assert_eq "exec: delete empties list" "" "$(harpoon_slots)"
+teardown
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [[ $fail -eq 0 ]]
