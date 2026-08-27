@@ -1,7 +1,8 @@
 import { parse, stringify } from "yaml";
 import { readFileSync, writeFileSync, readdirSync, unlinkSync, existsSync, mkdirSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { homedir } from "node:os";
+import { expandPath, sanitizeSessionName } from "./paths.ts";
 import {
   sessionExists,
   renameSession,
@@ -29,6 +30,16 @@ export interface TemplateSession {
 export interface Template {
   name: string;
   description?: string;
+  /**
+   * Opt-in: when true, `tx new` asks for a start directory (fuzzy picker)
+   * before applying the template. Off by default.
+   */
+  promptDir?: boolean;
+  /**
+   * Opt-in: when true, `tx new` asks what to call the session, pre-filled with
+   * the chosen directory's basename. Off by default.
+   */
+  promptName?: boolean;
   sessions: TemplateSession[];
   attach?: string; // target to attach to after creation (e.g. "session", "session:windowName", "session:2")
 }
@@ -113,22 +124,111 @@ function resolveSessionName(name: string): string {
 }
 
 /**
- * Expand ~ to home directory in paths
+ * Substitute {{dir}} / {{name}} placeholders in a template string.
  */
-function expandPath(path: string): string {
-  if (path.startsWith("~/")) {
-    return join(homedir(), path.slice(2));
-  }
-  return path;
+function subst(value: string | undefined, vars: Record<string, string>): string | undefined {
+  if (!value) return value;
+  return value.replace(/\{\{\s*(dir|name)\s*\}\}/g, (match, key: string) => vars[key] ?? match);
 }
 
 /**
- * Apply a template - create all sessions and windows
+ * Return true if a template already references the chosen directory itself.
  */
-export function applyTemplate(template: Template): void {
+function hasDirPlaceholder(value: string | undefined): boolean {
+  return !!value && /\{\{\s*dir\s*\}\}/.test(value);
+}
+
+function hasNamePlaceholder(value: string | undefined): boolean {
+  return !!value && /\{\{\s*name\s*\}\}/.test(value);
+}
+
+/**
+ * The default session name for a template: the chosen directory's basename,
+ * falling back to the template's own name.
+ */
+export function defaultSessionName(template: Template, dir?: string): string {
+  const base = dir ? expandPath(dir) : undefined;
+  if (base) return sanitizeSessionName(basename(base)) || template.name;
+
+  const first = template.sessions[0]?.name;
+  if (first && !hasNamePlaceholder(first)) return sanitizeSessionName(first);
+  return template.name;
+}
+
+/**
+ * Resolve a template against an optional chosen start directory and session name.
+ *
+ * - {{dir}}  -> the chosen directory (absolute)
+ * - {{name}} -> the chosen session name, defaulting to the directory's basename
+ *
+ * When a directory was chosen and a session neither sets nor interpolates its
+ * own `dir`, the chosen directory becomes that session's working directory.
+ *
+ * A single-session template whose name is a literal (no {{name}}) is still
+ * renamed to an explicitly chosen name — otherwise only placeholders change.
+ */
+export function resolveTemplate(template: Template, dir?: string, name?: string): Template {
+  const base = dir ? expandPath(dir) : undefined;
+  const chosenName = name ? sanitizeSessionName(name) : "";
+  const vars: Record<string, string> = {
+    dir: base ?? "",
+    name: chosenName || defaultSessionName(template, dir),
+  };
+
+  const single = template.sessions.length === 1;
+
+  const sessions = template.sessions.map((session) => {
+    const literal = !hasNamePlaceholder(session.name);
+    const rename = chosenName && single && literal;
+    const name = rename
+      ? chosenName
+      : sanitizeSessionName(subst(session.name, vars) ?? "") || template.name;
+
+    let sessionDir: string | undefined;
+    if (hasDirPlaceholder(session.dir)) {
+      sessionDir = subst(session.dir, vars);
+    } else if (base) {
+      sessionDir = base;
+    } else {
+      sessionDir = session.dir;
+    }
+
+    return {
+      ...session,
+      name,
+      dir: sessionDir || undefined,
+      windows: session.windows.map((win) => ({
+        ...win,
+        name: subst(win.name, vars),
+        cmd: subst(win.cmd, vars),
+      })),
+    };
+  });
+
+  // An attach target naming the old session name follows the rename.
+  let attach = subst(template.attach, vars);
+  if (attach && single && chosenName) {
+    const original = sanitizeSessionName(subst(template.sessions[0].name, vars) ?? "");
+    if (original && attach.startsWith(`${original}:`)) {
+      attach = `${sessions[0].name}:${attach.slice(original.length + 1)}`;
+    } else if (attach === original) {
+      attach = sessions[0].name;
+    }
+  }
+
+  return { ...template, sessions, attach };
+}
+
+/**
+ * Apply a template - create all sessions and windows.
+ * `dir` and `name` override the template's directory / session name
+ * (see resolveTemplate).
+ */
+export function applyTemplate(template: Template, dir?: string, name?: string): void {
+  const resolved = resolveTemplate(template, dir, name);
   const createdSessions: string[] = [];
 
-  for (const session of template.sessions) {
+  for (const session of resolved.sessions) {
     const sessionName = resolveSessionName(session.name);
     const dir = session.dir ? expandPath(session.dir) : undefined;
 
@@ -159,7 +259,7 @@ export function applyTemplate(template: Template): void {
   }
 
   // Resolve the attach target (supports "session", "session:windowName", "session:windowIndex")
-  const attachTarget = resolveAttachTarget(template.attach, createdSessions);
+  const attachTarget = resolveAttachTarget(resolved.attach, createdSessions);
   if (attachTarget) {
     if (isInsideTmux()) {
       switchClient(attachTarget);

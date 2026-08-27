@@ -12,7 +12,8 @@ import {
   type TmuxWindow,
 } from "../tmux.ts";
 import { parseArgs } from "../args.ts";
-import { loadTemplates, applyTemplate } from "../templates.ts";
+import { loadTemplates } from "../templates.ts";
+import { runTemplate } from "../templateflow.ts";
 import { BACK, withBack } from "../prompts.ts";
 
 const NEW_WINDOW_VALUE = "__new_window__";
@@ -164,20 +165,15 @@ export async function attach(args: string[]): Promise<void> {
             throw e;
           }
         } else {
-          // Apply selected template
+          // Apply selected template. Templates opting into promptDir /
+          // promptName ask here; ESC backs out to the template list.
           const template = templates.find((t) => t.name === templateSelection);
           if (!template) {
             console.error(`Template "${templateSelection}" not found`);
             process.exit(1);
           }
-          try {
-            applyTemplate(template);
-          } catch (e) {
-            if (e instanceof TmuxError) {
-              console.error(`Error: ${e.message}`);
-              process.exit(1);
-            }
-            throw e;
+          if (!(await runTemplate(template, { pageSize }))) {
+            continue templateLoop;
           }
         }
         return;

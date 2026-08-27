@@ -18,6 +18,7 @@ import {
   TemplateWindow,
 } from "../templates.ts";
 import { BACK, withBack } from "../prompts.ts";
+import { pickerPageSize } from "../layout.ts";
 
 function showHelp(): void {
   console.log(`tx template <subcommand>
@@ -73,7 +74,7 @@ async function showCmd(args: string[]): Promise<void> {
               (c.description?.toLowerCase().includes(lower) ?? false),
           );
         },
-        pageSize: process.stdout.rows,
+        pageSize: pickerPageSize(),
       }, ctx),
     );
     if (result === BACK) {
@@ -119,7 +120,7 @@ async function editCmd(args: string[]): Promise<void> {
               (c.description?.toLowerCase().includes(lower) ?? false),
           );
         },
-        pageSize: process.stdout.rows,
+        pageSize: pickerPageSize(),
       }, ctx),
     );
     if (result === BACK) {
@@ -141,9 +142,11 @@ async function editCmd(args: string[]): Promise<void> {
 async function createCmd(): Promise<void> {
   let name = "";
   let description = "";
+  let promptDir = false;
+  let promptName = false;
   const sessions: TemplateSession[] = [];
 
-  type Step = "name" | "description" | "sessionName" | "sessionDir" | "windowName" | "windowCmd" | "addWindow" | "addSession" | "done";
+  type Step = "name" | "description" | "promptDir" | "promptName" | "sessionName" | "sessionDir" | "windowName" | "windowCmd" | "addWindow" | "addSession" | "done";
   let step: Step = "name";
 
   let sessionName = "";
@@ -178,6 +181,28 @@ async function createCmd(): Promise<void> {
         );
         if (result === BACK) { step = "name"; break; }
         description = result;
+        step = "promptDir";
+        break;
+      }
+
+      case "promptDir": {
+        console.log("\n  Optional: ask for a start directory (fuzzy folder search) each time");
+        console.log("  this template runs. Use {{dir}} and {{name}} below to reference it.\n");
+        const result = await withBack((ctx) =>
+          confirm({ message: "Ask for a start directory when running?", default: false }, ctx),
+        );
+        if (result === BACK) { step = "description"; break; }
+        promptDir = result;
+        step = "promptName";
+        break;
+      }
+
+      case "promptName": {
+        const result = await withBack((ctx) =>
+          confirm({ message: "Ask what to call the session when running?", default: false }, ctx),
+        );
+        if (result === BACK) { step = "promptDir"; break; }
+        promptName = result;
         // Reset for first session
         sessionName = "";
         sessionDir = "";
@@ -191,10 +216,12 @@ async function createCmd(): Promise<void> {
           input({
             message: `Session ${sessions.length + 1} name`,
             required: true,
+            default:
+              (promptDir || promptName) && sessions.length === 0 ? "{{name}}" : undefined,
           }, ctx),
         );
         if (result === BACK) {
-          if (sessions.length === 0) { step = "description"; break; }
+          if (sessions.length === 0) { step = "promptName"; break; }
           step = "done";
           break;
         }
@@ -205,7 +232,11 @@ async function createCmd(): Promise<void> {
 
       case "sessionDir": {
         const result = await withBack((ctx) =>
-          input({ message: "Working directory (optional, e.g. ~/code/project)" }, ctx),
+          input({
+            message: promptDir
+              ? "Working directory (optional, blank = the directory you pick)"
+              : "Working directory (optional, e.g. ~/code/project)",
+          }, ctx),
         );
         if (result === BACK) { step = "sessionName"; break; }
         sessionDir = result;
@@ -320,6 +351,8 @@ async function createCmd(): Promise<void> {
 
   const template: Template = { name, sessions };
   if (description) template.description = description;
+  if (promptDir) template.promptDir = true;
+  if (promptName) template.promptName = true;
   if (attachValue) template.attach = attachValue;
 
   saveTemplate(template);
@@ -355,7 +388,7 @@ async function deleteCmd(args: string[]): Promise<void> {
                 (c.description?.toLowerCase().includes(lower) ?? false),
             );
           },
-          pageSize: process.stdout.rows,
+          pageSize: pickerPageSize(),
         }, ctx),
       );
       if (result === BACK) {

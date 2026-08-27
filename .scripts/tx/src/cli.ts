@@ -20,7 +20,7 @@ const COMMANDS: Record<string, { desc: string; fn: (args: string[]) => void | Pr
     fn: list,
   },
   new: {
-    desc: "Create a new session (from template or custom): tx new [name]",
+    desc: "Create a new session: tx new [name] [-t template] [--dir] [--name]",
     fn: newCmd,
   },
   rename: {
@@ -44,6 +44,12 @@ function usage(): void {
   for (const [name, cmd] of Object.entries(COMMANDS)) {
     console.log(`  ${name.padEnd(12)} ${cmd.desc}`);
   }
+  console.log("\nFlags for tx new:");
+  console.log("  -t, --template=NAME  Apply a template without the picker");
+  console.log("  -d, --dir            Pick a start directory (fuzzy folder search)");
+  console.log("      --dir=PATH       Use PATH as the start directory, skipping the picker");
+  console.log("  -n, --name           Ask what to call the session");
+  console.log("      --name=NAME      Use NAME for the session, skipping the prompt");
 }
 
 export async function run(args: string[]): Promise<void> {

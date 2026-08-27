@@ -82,10 +82,11 @@ export function newWindow(name?: string): void {
   switchClient(target);
 }
 
-export function newSession(name?: string): void {
+export function newSession(name?: string, dir?: string): void {
   if (isInsideTmux()) {
     const args = ["new-session", "-d"];
     if (name) args.push("-s", name);
+    if (dir) args.push("-c", dir);
     tmux(args);
     const target =
       name ??
@@ -97,6 +98,7 @@ export function newSession(name?: string): void {
   } else {
     const args = ["new-session"];
     if (name) args.push("-s", name);
+    if (dir) args.push("-c", dir);
     tmux(args);
   }
 }
