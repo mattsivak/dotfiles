@@ -78,6 +78,3 @@ export PATH="$HOME/.local/bin:$PATH"
 
 
 source /Users/mattsivak/.zshenv
-
-# OpenClaw Completion
-source "/Users/mattsivak/.openclaw/completions/openclaw.zsh"

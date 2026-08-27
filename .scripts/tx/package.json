@@ -1,0 +1,20 @@
+{
+  "name": "tx",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "compile": "bun build --compile ./src/index.ts --outfile ~/.local/bin/tx"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.3"
+  },
+  "dependencies": {
+    "@inquirer/checkbox": "^5.1.5",
+    "@inquirer/confirm": "^6.0.13",
+    "@inquirer/input": "^5.0.13",
+    "@inquirer/search": "^4.1.9",
+    "@inquirer/select": "^5.1.5",
+    "yaml": "^2.8.2"
+  }
+}

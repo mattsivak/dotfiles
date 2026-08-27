@@ -1,5 +1,28 @@
 import { execFileSync } from "node:child_process";
 
+export class TmuxError extends Error {
+  constructor(
+    message: string,
+    public readonly exitCode: number = 1,
+  ) {
+    super(message);
+    this.name = "TmuxError";
+  }
+}
+
+function tmux(args: string[], opts?: { capture?: boolean }): string {
+  try {
+    const result = execFileSync("tmux", args, {
+      encoding: "utf-8",
+      stdio: opts?.capture ? ["pipe", "pipe", "pipe"] : ["inherit", "inherit", "pipe"],
+    });
+    return result ?? "";
+  } catch (err: any) {
+    const stderr = (err.stderr ?? "").toString().trim();
+    throw new TmuxError(stderr || `tmux ${args[0]} failed`, err.status ?? 1);
+  }
+}
+
 export interface TmuxWindow {
   /** target for tmux commands, e.g. "main:1" */
   target: string;
@@ -21,10 +44,7 @@ export function listWindows(): TmuxWindow[] {
 
   let raw: string;
   try {
-    raw = execFileSync("tmux", ["list-windows", "-a", "-F", format], {
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"],
-    });
+    raw = tmux(["list-windows", "-a", "-F", format], { capture: true });
   } catch {
     return [];
   }
@@ -47,43 +67,58 @@ export function listWindows(): TmuxWindow[] {
 }
 
 export function switchClient(target: string): void {
-  execFileSync("tmux", ["switch-client", "-t", target], {
-    stdio: "inherit",
-  });
+  tmux(["switch-client", "-t", target]);
 }
 
 export function attachSession(target: string): void {
-  execFileSync("tmux", ["attach-session", "-t", target], {
-    stdio: "inherit",
-  });
+  tmux(["attach-session", "-t", target]);
 }
 
-export function newWindow(): void {
-  execFileSync("tmux", ["new-window"], { stdio: "inherit" });
+export function newWindow(name?: string): void {
+  const session = tmux(["display-message", "-p", "#{session_name}"], { capture: true }).trim();
+  const args = ["new-window", "-d", "-P", "-F", "#{session_name}:#{window_index}", "-t", session];
+  if (name) args.push("-n", name);
+  const target = tmux(args, { capture: true }).trim();
+  switchClient(target);
 }
 
 export function newSession(name?: string): void {
-  const args = ["new-session"];
-  if (isInsideTmux()) args.push("-d");
-  if (name) args.push("-s", name);
-  execFileSync("tmux", args, { stdio: "inherit" });
+  if (isInsideTmux()) {
+    const args = ["new-session", "-d"];
+    if (name) args.push("-s", name);
+    tmux(args);
+    const target =
+      name ??
+      tmux(["list-sessions", "-F", "#{session_name}"], { capture: true })
+        .trim()
+        .split("\n")
+        .pop()!;
+    switchClient(target);
+  } else {
+    const args = ["new-session"];
+    if (name) args.push("-s", name);
+    tmux(args);
+  }
 }
 
 export interface TmuxSession {
   name: string;
   windowCount: number;
   attached: boolean;
+  activeWindowName: string;
 }
 
 export function listSessions(): TmuxSession[] {
-  const format = ["#{session_name}", "#{session_windows}", "#{session_attached}"].join("\t");
+  const format = [
+    "#{session_name}",
+    "#{session_windows}",
+    "#{session_attached}",
+    "#{window_name}",
+  ].join("\t");
 
   let raw: string;
   try {
-    raw = execFileSync("tmux", ["list-sessions", "-F", format], {
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"],
-    });
+    raw = tmux(["list-sessions", "-F", format], { capture: true });
   } catch {
     return [];
   }
@@ -93,11 +128,12 @@ export function listSessions(): TmuxSession[] {
     .split("\n")
     .filter(Boolean)
     .map((line) => {
-      const [name, windowCount, attached] = line.split("\t");
+      const [name, windowCount, attached, activeWindowName] = line.split("\t");
       return {
         name,
         windowCount: parseInt(windowCount, 10),
         attached: attached !== "0",
+        activeWindowName,
       };
     });
 }
@@ -105,19 +141,76 @@ export function listSessions(): TmuxSession[] {
 export function currentSession(): string | null {
   if (!isInsideTmux()) return null;
   try {
-    return execFileSync("tmux", ["display-message", "-p", "#{session_name}"], {
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"],
-    }).trim();
+    return tmux(["display-message", "-p", "#{session_name}"], { capture: true }).trim();
   } catch {
     return null;
   }
 }
 
 export function killSession(name: string): void {
-  execFileSync("tmux", ["kill-session", "-t", name], { stdio: "inherit" });
+  tmux(["kill-session", "-t", name]);
+}
+
+export function renameSession(target: string, newName: string): void {
+  tmux(["rename-session", "-t", target, newName]);
+}
+
+export function sessionExists(name: string): boolean {
+  try {
+    tmux(["has-session", "-t", name], { capture: true });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function isInsideTmux(): boolean {
   return "TMUX" in process.env;
+}
+
+/**
+ * Create a new detached session with optional starting directory
+ */
+export function newSessionDetached(name: string, dir?: string): void {
+  const args = ["new-session", "-d", "-s", name];
+  if (dir) args.push("-c", dir);
+  tmux(args);
+}
+
+/**
+ * Create a new window in a specific session
+ */
+export function newWindowInSession(session: string, name?: string, dir?: string): void {
+  const args = ["new-window", "-t", session];
+  if (name) args.push("-n", name);
+  if (dir) args.push("-c", dir);
+  tmux(args);
+}
+
+/**
+ * Send keys to a target (session:window)
+ */
+export function sendKeys(target: string, keys: string, literal: boolean = false): void {
+  const args = ["send-keys", "-t", target];
+  if (literal) args.push("-l");
+  args.push(keys);
+  // Add Enter key to execute commands (unless it's a control sequence)
+  if (!keys.startsWith("C-") && !literal) {
+    args.push("C-m");
+  }
+  tmux(args);
+}
+
+/**
+ * Rename a window
+ */
+export function renameWindow(session: string, windowIndex: string, name: string): void {
+  tmux(["rename-window", "-t", `${session}:${windowIndex}`, name]);
+}
+
+/**
+ * Kill the entire tmux server (all sessions)
+ */
+export function killServer(): void {
+  tmux(["kill-server"]);
 }

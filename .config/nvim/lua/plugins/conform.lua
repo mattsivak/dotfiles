@@ -3,16 +3,6 @@ return {
   dependencies = { "mason.nvim" },
   event = { "BufWritePre" },
   cmd = { "ConformInfo" },
-  keys = {
-    {
-      "<leader>f",
-      function()
-        require("conform").format({ async = true, lsp_fallback = true })
-      end,
-      mode = "",
-      desc = "Format buffer",
-    },
-  },
   opts = {
     formatters_by_ft = {
       javascript = { "prettier", "eslint_d", stop_after_first = true },

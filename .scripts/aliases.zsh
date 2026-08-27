@@ -23,3 +23,5 @@ alias startzapfloord="tmux new-session -d -s zapfloor \; \
 alias stopzapfloor="tmux kill-session -t oc2; tmux kill-session -t operator-client; tmux kill-session -t user-client; tmux kill-session -t hq-api"
 
 alias stoptmux="tmux kill-server"
+
+alias oc="opencode --port"

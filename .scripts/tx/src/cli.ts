@@ -1,14 +1,39 @@
 import { attach } from "./commands/attach.ts";
 import { exit } from "./commands/exit.ts";
+import { list } from "./commands/list.ts";
+import { newCmd } from "./commands/new.ts";
+import { rename } from "./commands/rename.ts";
+import { stop } from "./commands/stop.ts";
+import { templateCmd } from "./commands/template.ts";
 
-const COMMANDS: Record<string, { desc: string; fn: () => void }> = {
+const COMMANDS: Record<string, { desc: string; fn: (args: string[]) => void | Promise<void> }> = {
   attach: {
-    desc: "Pick a tmux window to switch to, or create a new one",
+    desc: "Attach to a session/window: tx attach [target]",
     fn: attach,
   },
   exit: {
-    desc: "Pick a tmux session to kill",
+    desc: "Kill tmux sessions (multi-select): tx exit [name...]",
     fn: exit,
+  },
+  list: {
+    desc: "List all tmux sessions",
+    fn: list,
+  },
+  new: {
+    desc: "Create a new session (from template or custom): tx new [name]",
+    fn: newCmd,
+  },
+  rename: {
+    desc: "Rename a session: tx rename [session] <new-name>",
+    fn: rename,
+  },
+  stop: {
+    desc: "Stop tmux server (kill all sessions)",
+    fn: stop,
+  },
+  template: {
+    desc: "Manage templates: tx template <list|show|edit|create|delete>",
+    fn: templateCmd,
   },
 };
 
@@ -21,7 +46,7 @@ function usage(): void {
   }
 }
 
-export function run(args: string[]): void {
+export async function run(args: string[]): Promise<void> {
   const command = args[0];
 
   if (!command || command === "--help" || command === "-h") {
@@ -36,5 +61,5 @@ export function run(args: string[]): void {
     process.exit(1);
   }
 
-  cmd.fn();
+  await cmd.fn(args.slice(1));
 }
