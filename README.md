@@ -6,6 +6,7 @@ My macOS dotfiles, managed with [GNU Stow](https://www.gnu.org/software/stow/).
 
 - **zsh** - oh-my-zsh with starship prompt, zoxide, zsh-syntax-highlighting, zsh-autosuggestions
 - **tmux** - prefix `C-f`, minimal-tmux-status theme, tms session manager, tpm plugins (managed as submodules)
+- **tx** - tmux session toolkit with session templates (see `.scripts/tx`)
 - **neovim** - LazyVim-based config
 - **yabai** - BSP tiling window manager (no gaps, no padding)
 - **skhd** - keybindings for yabai using hyper/meh/fn modifiers

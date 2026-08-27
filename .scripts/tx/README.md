@@ -195,7 +195,9 @@ tx/
 │       └── template.ts      # Template management
 ```
 
-Templates live in `~/.config/tx/templates/*.yaml`.
+Templates live in `~/.config/tx/templates/*.yaml`. That directory is stowed
+from `.config/tx` in this repo, so templates you create with
+`tx template create` are version-controlled automatically.
 
 ## Adding a new command
 

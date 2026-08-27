@@ -1,0 +1,15 @@
+name: dev
+description: nvim + claude + lazygit in one project
+promptDir: true
+promptName: true
+sessions:
+  - name: "{{name}}"
+    dir: "{{dir}}"
+    windows:
+      - name: nvim
+        cmd: nvim
+      - name: claude
+        cmd: claude
+      - name: lazygit
+        cmd: lazygit
+attach: "{{name}}:nvim"
