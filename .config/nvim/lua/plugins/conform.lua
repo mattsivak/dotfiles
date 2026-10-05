@@ -5,11 +5,11 @@ return {
   cmd = { "ConformInfo" },
   opts = {
     formatters_by_ft = {
-      javascript = { "prettier", "eslint_d", stop_after_first = true },
-      typescript = { "prettier", "eslint_d", stop_after_first = true },
-      javascriptreact = { "prettier", "eslint_d", stop_after_first = true },
-      typescriptreact = { "prettier", "eslint_d", stop_after_first = true },
-      vue = { "prettier", "eslint_d", stop_after_first = true },
+      javascript = { "prettier" },
+      typescript = { "prettier" },
+      javascriptreact = { "prettier" },
+      typescriptreact = { "prettier" },
+      vue = { "prettier" },
       json = { "prettier" },
       jsonc = { "prettier" },
       yaml = { "prettier" },
