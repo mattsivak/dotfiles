@@ -118,6 +118,18 @@ sketchybar --add item chevron left \
            --subscribe front_app front_app_switched
 
 ##### Adding Right Items #####
+# Right-side items are laid out RIGHT TO LEFT: the first one declared ends up
+# rightmost. So the declaration order below reads outward from the clock.
+#
+# Grouped by what the reader is asking, loosest to tightest:
+#
+#   clock volume          ambient, always there, nothing to do with the machine
+#   ip_address power      connectivity and energy -- environment, not workload
+#   swap memory gpu cpu   the workload, in escalating immediacy
+#
+# cpu sits innermost because it changes fastest and is checked most often, so
+# it lands closest to the eye's resting point rather than at the screen edge.
+# swap sits beside memory because swap is a memory symptom, not its own topic.
 # In the same way as the left items we can add items to the right side.
 # Additional position (e.g. center) are available, see:
 # https://felixkratz.github.io/SketchyBar/config/items#adding-items-to-sketchybar
@@ -134,27 +146,37 @@ sketchybar --add item clock right \
            --add item volume right \
            --set volume icon.color=$AYU_CONSTANT script="$PLUGIN_DIR/volume.sh" \
            --subscribe volume volume_change \
-           --add item memory right \
-           --set memory update_freq=5 icon=󰍛 icon.color=$AYU_ENTITY \
-                        script="$PLUGIN_DIR/memory.sh" \
            --add item ip_address right \
            --set ip_address update_freq=30 icon.color=$AYU_STRING \
                             script="$PLUGIN_DIR/ip_address.sh" \
-           --add item swap right \
-           --set swap update_freq=15 drawing=off \
-                      script="$PLUGIN_DIR/swap.sh" \
-           --add item cpu right \
-           --set cpu update_freq=10 icon="󰻠" icon.color=$AYU_ENTITY \
-                     script="$PLUGIN_DIR/cpu.sh" \
            --add item power right \
-           --set power update_freq=30 script="$PLUGIN_DIR/power.sh" \
+           --set power update_freq=30 drawing=off \
+                       script="$PLUGIN_DIR/power.sh" \
                        click_script="$PLUGIN_DIR/power_detail.sh" \
                        popup.background.color=$POPUP_BG \
                        popup.background.corner_radius=10 \
                        popup.background.border_width=2 \
                        popup.background.border_color=$POPUP_BORDER \
                        popup.align=right \
-           --subscribe power power_source_change system_woke
+           --subscribe power power_source_change system_woke \
+           --add item swap right \
+           --set swap update_freq=15 drawing=off \
+                      script="$PLUGIN_DIR/swap.sh" \
+           --add item memory right \
+           --set memory update_freq=5 icon=󰍛 icon.color=$AYU_ENTITY \
+                        script="$PLUGIN_DIR/memory.sh" \
+                        click_script="$PLUGIN_DIR/memory_detail.sh" \
+                        popup.background.color=$POPUP_BG \
+                        popup.background.corner_radius=10 \
+                        popup.background.border_width=2 \
+                        popup.background.border_color=$POPUP_BORDER \
+                        popup.align=right \
+           --add item gpu right \
+           --set gpu update_freq=5 drawing=off \
+                     script="$PLUGIN_DIR/gpu.sh" \
+           --add item cpu right \
+           --set cpu update_freq=10 icon="󰻠" icon.color=$AYU_ENTITY \
+                     script="$PLUGIN_DIR/cpu.sh"
 
 # Right-side items are laid out right-to-left, so the clock is the rightmost
 # thing in the bar and carries the pill's trailing inset.
@@ -195,6 +217,31 @@ sketchybar --add item power.popup.status popup.power \
            --set power.popup.cycles "${popup_row[@]}" icon="Cycles" \
            --add item power.popup.temp popup.power \
            --set power.popup.temp "${popup_row[@]}" icon="Temp"
+
+##### Memory popup #####
+# The bar shows how full RAM is; this shows what the machine is actually
+# holding. macOS compresses cold pages instead of swapping them, so the real
+# footprint routinely exceeds installed RAM -- a fact no used/total figure can
+# express. Filled by memory_detail.sh on click.
+
+sketchybar --add item memory.popup.pressure popup.memory \
+           --set memory.popup.pressure "${popup_row[@]}" icon="Pressure" \
+           --add item memory.popup.footprint popup.memory \
+           --set memory.popup.footprint "${popup_row[@]}" icon="Holding" \
+           --add item memory.popup.ram popup.memory \
+           --set memory.popup.ram "${popup_row[@]}" icon="RAM used" \
+           --add item memory.popup.app popup.memory \
+           --set memory.popup.app "${popup_row[@]}" icon="App" \
+           --add item memory.popup.wired popup.memory \
+           --set memory.popup.wired "${popup_row[@]}" icon="Wired" \
+           --add item memory.popup.inactive popup.memory \
+           --set memory.popup.inactive "${popup_row[@]}" icon="Inactive" \
+           --add item memory.popup.compressed popup.memory \
+           --set memory.popup.compressed "${popup_row[@]}" icon="Compressed" \
+           --add item memory.popup.swap popup.memory \
+           --set memory.popup.swap "${popup_row[@]}" icon="Swap" \
+           --add item memory.popup.free popup.memory \
+           --set memory.popup.free "${popup_row[@]}" icon="Free"
 
 ##### Pills #####
 # The bar is transparent; these brackets are the visible surface.
@@ -283,7 +330,7 @@ LEFT_ITEMS+=(chevron front_app)
 NOTCH_LEFT_ITEMS=("${LEFT_ITEMS[@]}")
 [ -n "$NOTCH_DISPLAY" ] && NOTCH_LEFT_ITEMS+=(media)
 
-RIGHT_ITEMS=(clock volume memory swap cpu power ip_address)
+RIGHT_ITEMS=(clock volume ip_address power swap memory gpu cpu)
 
 if [ -n "$NOTCH_DISPLAY" ]; then
   # Built-in display: two halves meeting at the notch.

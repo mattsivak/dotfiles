@@ -35,9 +35,10 @@ if [ "$USED_MB_INT" -lt 1 ]; then
   exit 0
 fi
 
-# Label in whichever unit reads better.
+# Label in whichever unit reads better. printf rather than bare bc: bc drops
+# the leading zero below 1, which would render a value as ".8GB".
 if [ "$USED_MB_INT" -ge 1024 ]; then
-  LABEL="$(echo "scale=1; $USED_MB / 1024" | bc)GB"
+  LABEL="$(printf '%.1f' "$(echo "scale=3; $USED_MB / 1024" | bc)")GB"
 else
   LABEL="${USED_MB_INT}MB"
 fi

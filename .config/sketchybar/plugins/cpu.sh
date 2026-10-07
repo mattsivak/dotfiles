@@ -1,27 +1,33 @@
 #!/bin/sh
 #
-# CPU load.
+# CPU utilization.
 #
-# Uses the kernel's load average rather than `top -l 1`, which costs ~590ms per
-# call against ~3ms for sysctl. At a 10s refresh that difference is the whole
-# cost of the widget.
+# The percentage comes from cpu_usage, a small compiled helper that reads the
+# kernel's tick counters -- see cpu_usage.swift for why load average cannot be
+# used here (short version: it counts threads waiting, not CPU busy, so it goes
+# past 100% while the CPU is idle).
 #
-# Load average is not CPU percentage: it counts threads wanting to run, so it
-# can exceed the core count under contention. Normalising by core count gives a
-# figure where 100% means "every core has exactly one thread's worth of work" --
-# which is the honest reading of a saturated machine.
+# The binary is built on first run and rebuilt whenever the source is newer,
+# so a fresh clone of the dotfiles needs no manual build step.
 
 [ -n "$CONFIG_DIR" ] && . "$CONFIG_DIR/colors.sh"
 
-# { 13.24 11.82 10.73 } -- 1, 5 and 15 minute averages. The 1 minute figure is
-# the responsive one.
-LOAD=$(sysctl -n vm.loadavg 2>/dev/null | awk '{print $2}')
-NCPU=$(sysctl -n hw.ncpu 2>/dev/null)
+SRC="$CONFIG_DIR/cpu_usage.swift"
+BIN="$CONFIG_DIR/.cache/cpu_usage"
 
-[ -z "$LOAD" ] || [ -z "$NCPU" ] && exit 0
+# Build on first run, or when the source has changed. swiftc is not on the
+# minimal PATH sketchybar gives plugins, hence the absolute path.
+if [ ! -x "$BIN" ] || [ "$SRC" -nt "$BIN" ]; then
+  mkdir -p "$CONFIG_DIR/.cache"
+  /usr/bin/swiftc -O -o "$BIN" "$SRC" 2>/dev/null || exit 0
+fi
 
-PCT=$(echo "scale=0; ($LOAD * 100) / $NCPU" | bc 2>/dev/null)
-[ -z "$PCT" ] && exit 0
+PCT=$("$BIN" 2>/dev/null)
+
+# Fall back silently rather than showing a wrong number.
+case "$PCT" in
+  ''|*[!0-9]*) exit 0 ;;
+esac
 
 if [ "$PCT" -ge 90 ]; then
   COLOR=$AYU_ERROR

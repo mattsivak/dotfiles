@@ -72,6 +72,22 @@ else
   COLOR=$AYU_STRING
 fi
 
+# Visibility: hide when there is nothing to say.
+#
+# On AC and not charging means the battery is settled -- either full, or parked
+# at 80% by optimised charging. Either way the charge is not moving and not
+# finite, so a permanent percentage is noise on a machine that lives on a desk.
+#
+# Deliberately not thresholded on percentage: optimised charging holds this
+# machine at 80% for hours, which a ">= 95" rule would treat as interesting
+# forever. What makes it interesting is power moving, not the number.
+#
+# Still shown: on battery (charge is now finite), and while charging.
+if [ "$PLUGGED" = "Yes" ] && [ "$CHARGING" = "No" ]; then
+  sketchybar --set "$NAME" drawing=off
+  exit 0
+fi
+
 # The label earns its width: percentage always, plus the draw when power is
 # actually moving. Idle on mains shows just the percentage rather than "0W".
 if [ "$WATTS_INT" -ge 1 ]; then
@@ -80,4 +96,4 @@ else
   LABEL="${PERCENT}%"
 fi
 
-sketchybar --set "$NAME" icon="$ICON" icon.color="$COLOR" label="$LABEL"
+sketchybar --set "$NAME" drawing=on icon="$ICON" icon.color="$COLOR" label="$LABEL"

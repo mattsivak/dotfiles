@@ -15,3 +15,7 @@
 .config/zed/
 .config/github-copilot/
 .zshenv
+
+# sketchybar builds its CPU helper on first run; the binary is a build
+# artefact of cpu_usage.swift, not source.
+.config/sketchybar/.cache/
