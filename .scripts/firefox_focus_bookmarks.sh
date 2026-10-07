@@ -12,10 +12,12 @@
 #     Tab     -> Extensions button
 #     Tab     -> first bookmark cell
 #
-# The hop count is stable: Firefox groups the whole extension area into ONE
-# <toolbartabstop>, so the route is 2 Tabs whether 0, 1 or 3 extensions are
-# pinned (verified at each count). It does NOT depend on how many bookmarks
-# are on the strip.
+# The hop count is stable at 2 Tabs. The structural reason is the reliable
+# one: of the 8 <toolbartabstop> elements in the chrome, exactly ONE sits in
+# #nav-bar, so the whole extension area is a single stop no matter how many
+# icons it holds. Measured at 0, 1 and 2 pinned extensions (a third install
+# landed unpinned, so 3 was not actually exercised) and with 4 bookmark
+# cells; the count does not depend on either number.
 #
 # Afterwards: arrows walk the folders, Down/Enter opens one, Esc leaves.
 
