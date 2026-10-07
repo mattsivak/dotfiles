@@ -1,5 +1,7 @@
 #!/bin/sh
 
+[ -n "$CONFIG_DIR" ] && . "$CONFIG_DIR/colors.sh"
+
 # Get memory info using vm_stat
 PAGE_SIZE=$(pagesize)
 VM_STAT=$(vm_stat)
@@ -23,15 +25,17 @@ TOTAL_GB=$(echo "scale=0; ($TOTAL_PAGES * $PAGE_SIZE) / 1073741824" | bc)
 # Calculate percentage
 PERCENTAGE=$(echo "scale=0; ($USED_PAGES * 100) / $TOTAL_PAGES" | bc)
 
-# Choose icon based on usage
+# Memory pressure is carried by color; the glyph is the same at every level.
+ICON="󰍛"
 if [ "$PERCENTAGE" -ge 90 ]; then
-  ICON="󰍛"
+  COLOR=$AYU_ERROR
 elif [ "$PERCENTAGE" -ge 70 ]; then
-  ICON="󰍛"
+  COLOR=$AYU_WARNING
 elif [ "$PERCENTAGE" -ge 50 ]; then
-  ICON="󰍛"
+  COLOR=$AYU_ACCENT
 else
-  ICON="󰍛"
+  COLOR=$AYU_ENTITY
 fi
 
-sketchybar --set "$NAME" icon="$ICON" label="${USED_GB}/${TOTAL_GB}GB"
+sketchybar --set "$NAME" icon="$ICON" icon.color="$COLOR" \
+                         label="${USED_GB}/${TOTAL_GB}GB"

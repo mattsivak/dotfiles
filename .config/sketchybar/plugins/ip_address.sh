@@ -1,17 +1,22 @@
 #!/bin/sh
 
+[ -n "$CONFIG_DIR" ] && . "$CONFIG_DIR/colors.sh"
+
 IP_ADDRESS=$(scutil --nwi | grep address | sed 's/.*://' | tr -d ' ' | head -1)
 IS_VPN=$(scutil --nwi | grep -m1 'utun' | awk '{ print $1 }')
 
 if [[ $IS_VPN != "" ]]; then
   ICON="󰌾"
   LABEL="VPN"
+  COLOR=$AYU_STRING
 elif [[ $IP_ADDRESS != "" ]]; then
   ICON="󰖩"
   LABEL=$IP_ADDRESS
+  COLOR=$AYU_TAG
 else
   ICON="󰖪"
   LABEL="Not Connected"
+  COLOR=$AYU_ERROR
 fi
 
-sketchybar --set $NAME icon="$ICON" label="$LABEL"
+sketchybar --set $NAME icon="$ICON" icon.color="$COLOR" label="$LABEL"
