@@ -743,6 +743,13 @@ findbar *,
 #customizableui-special-spring2,
 #nav-bar-overflow-button,
 #urlbar-go-button,
+/* Firefox 157 renders the "go" affordance as `img.urlbar-go-button` — a
+ * CLASS on an <img>, not the old #urlbar-go-button id, so the id selector
+ * above silently matches nothing. It only appears once autofill completes a
+ * URL, which is why it survives a casual look: measured at 724,90 22x22 with
+ * gURLBar.value == "mozilla.org/". Enter already submits. */
+.urlbar-go-button,
+.urlbar-icon.urlbar-go-button,
 #pageActionButton,
 #page-action-buttons,
 #star-button-box,
