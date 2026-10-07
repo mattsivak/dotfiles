@@ -153,7 +153,14 @@ main {
   background: var(--mz-bg) !important;
 }
 
-/* Square everything, kill every transition. A WM does not animate. */
+/* Square everything, kill every transition. A WM does not animate.
+ *
+ * EXCEPT controls whose shape carries their meaning. Kagi's lens filter uses
+ * `.k_ui_toggle_switch`, a 26x16 pill with a sliding knob; squaring it
+ * rendered a rectangle inside the pill's own rectangle — the "box inside a
+ * box" on the Fediverse Forums lens. Diffed against stock: we add no border
+ * there at all, the damage was purely the radius.
+ */
 *,
 *::before,
 *::after {
@@ -162,6 +169,50 @@ main {
   text-shadow: none !important;
   animation-duration: 0s !important;
   transition-duration: 0s !important;
+}
+
+.k_ui_toggle_switch,
+.k_ui_toggle_switch *,
+.k_ui_toggle_switch_bar,
+.k_ui_toggle_switch_bar *,
+.filter-checkbox,
+.filter-checkbox *,
+input[type="checkbox"],
+input[type="radio"],
+.toggle,
+.toggle * {
+  border-radius: 999px !important;
+}
+
+/* The knob is a PSEUDO-ELEMENT (`.k_ui_toggle_switch_bar::after`, 12x12,
+ * stock radius 50%). The blanket `*::after` rule squared it, so the toggle
+ * read as a square chip inside a rounded pill. An exception list of elements
+ * does not cover their pseudo-elements — they need naming separately. */
+.k_ui_toggle_switch::before,
+.k_ui_toggle_switch::after,
+.k_ui_toggle_switch *::before,
+.k_ui_toggle_switch *::after,
+.k_ui_toggle_switch_bar::before,
+.k_ui_toggle_switch_bar::after,
+.filter-checkbox::before,
+.filter-checkbox::after,
+.toggle::before,
+.toggle::after {
+  border-radius: 50% !important;
+}
+
+/* Tone the toggle to the palette: recessed when off, gold when on.
+ * Stock bar is #18181a — darker than the surrounding row, i.e. a well, not a
+ * raised chip. --mz-line keeps that relationship in ayu. */
+.k_ui_toggle_switch_bar {
+  background: var(--mz-line) !important;
+  border: 1px solid var(--mz-border) !important;
+}
+
+.k_ui_toggle_switch.--active .k_ui_toggle_switch_bar,
+.k_ui_toggle_switch[aria-checked="true"] .k_ui_toggle_switch_bar,
+input:checked + .k_ui_toggle_switch_bar {
+  background: var(--mz-accent) !important;
 }
 
 /* Scrollbars to match the chrome. */
@@ -262,13 +313,14 @@ textarea,
   font-family: var(--mz-font) !important;
 }
 
+/* Kagi already pads these (measured 4px 8px 7px); overriding it shrank the
+ * active lens's gold block to 34px against a 37px row. Colour only. */
 .serp-nav .nav_item,
 .serp-nav .nav-item,
 .nav_item a,
 .nav-item a {
   color: var(--mz-dim) !important;
   border: none !important;
-  padding: 1px 1ch !important;
   font-size: 12px !important;
   text-transform: lowercase;
 }
@@ -671,6 +723,20 @@ button:hover,
 .auto_suggestions {
   background: var(--mz-panel) !important;
   border: 1px solid var(--mz-border) !important;
+}
+
+/* Quick Answer is a genuine bordered button in stock Kagi (measured 1px);
+ * the blanket icon-button rule had stripped it. */
+.quick-answer-trigger-link,
+._0_quick_answer_trigger_btn {
+  border: 1px solid var(--mz-border) !important;
+  color: var(--mz-accent) !important;
+}
+
+.quick-answer-trigger-link:hover,
+._0_quick_answer_trigger_btn:hover {
+  border-color: var(--mz-accent) !important;
+  color: var(--mz-accent) !important;
 }
 
 a {
