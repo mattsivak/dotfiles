@@ -5,6 +5,9 @@
 
 PLUGIN_DIR="$CONFIG_DIR/plugins"
 
+# ayu dark palette; exported so plugin scripts inherit the same colors.
+. "$CONFIG_DIR/colors.sh"
+
 ##### Bar Appearance #####
 # Configuring the general appearance of the bar.
 # These are only some of the options available. For all options see:
@@ -12,7 +15,18 @@ PLUGIN_DIR="$CONFIG_DIR/plugins"
 # If you are looking for other colors, see the color picker:
 # https://felixkratz.github.io/SketchyBar/config/tricks#color-picker
 
-sketchybar --bar position=top height=38 color=0xff000000
+# Split bar: the bar surface itself is transparent and chromeless. What you
+# actually see are two bracket "islands" (left_island / right_island, defined
+# at the bottom of this file) that wrap the items, leaving the middle of the
+# screen empty. The bar still occupies the full strip for layout purposes --
+# only its background is invisible.
+#
+# yabai's external_bar must reserve height + y_offset (38 + 8 = 46).
+# margin insets horizontally only; it adds no vertical space.
+sketchybar --bar position=top height=38 color=0x00000000 \
+                 corner_radius=0 margin=8 y_offset=8 \
+                 border_width=0 shadow=off \
+                 padding_left=0 padding_right=0
 
 sketchybar --add event window_change
 
@@ -26,8 +40,8 @@ default=(
   padding_right=5
   icon.font="Hack Nerd Font:Bold:17.0"
   label.font="Hack Nerd Font:Bold:14.0"
-  icon.color=0xffffffff
-  label.color=0xffffffff
+  icon.color=$ITEM_ICON
+  label.color=$ITEM_FG
   icon.padding_left=4
   icon.padding_right=4
   label.padding_left=4
@@ -55,9 +69,10 @@ do
     icon="$sid"
     icon.padding_left=7
     icon.padding_right=7
-    background.color=0x40ffffff
-    background.corner_radius=5
-    background.height=25
+    icon.color=$SPACE_IDLE_FG
+    background.color=$SPACE_ACTIVE_BG
+    background.corner_radius=8
+    background.height=24
     label.drawing=off
     script="$PLUGIN_DIR/space.sh"
     click_script="yabai -m space --focus $sid"
@@ -70,9 +85,10 @@ done
 # only the properties deviating from the current defaults need to be set
 
 sketchybar --add item chevron left \
-           --set chevron icon= label.drawing=off \
+           --set chevron icon= icon.color=$AYU_ACCENT label.drawing=off \
            --add item front_app left \
-           --set front_app icon.drawing=off script="$PLUGIN_DIR/front_app.sh" \
+           --set front_app icon.drawing=off label.color=$AYU_ACCENT \
+                           script="$PLUGIN_DIR/front_app.sh" \
            --subscribe front_app front_app_switched
 
 ##### Adding Right Items #####
@@ -87,48 +103,51 @@ sketchybar --add item chevron left \
 # https://felixkratz.github.io/SketchyBar/config/events
 
 sketchybar --add item clock right \
-           --set clock update_freq=10 icon=  script="$PLUGIN_DIR/clock.sh" \
+           --set clock update_freq=10 icon= icon.color=$AYU_TAG \
+                       script="$PLUGIN_DIR/clock.sh" \
            --add item volume right \
-           --set volume script="$PLUGIN_DIR/volume.sh" \
+           --set volume icon.color=$AYU_CONSTANT script="$PLUGIN_DIR/volume.sh" \
            --subscribe volume volume_change \
            --add item battery right \
            --set battery update_freq=120 script="$PLUGIN_DIR/battery.sh" \
            --subscribe battery system_woke power_source_change \
            --add item memory right \
-           --set memory update_freq=5 icon=󰍛 script="$PLUGIN_DIR/memory.sh" \
+           --set memory update_freq=5 icon=󰍛 icon.color=$AYU_ENTITY \
+                        script="$PLUGIN_DIR/memory.sh" \
            --add item power_system right \
            --set power_system icon="󰚥" drawing=off click_script="$PLUGIN_DIR/power_click.sh" \
-                              popup.background.color=0xff1e1e2e popup.background.corner_radius=10 \
-                              popup.background.border_width=2 popup.background.border_color=0xff444444 \
+                              popup.background.color=$POPUP_BG popup.background.corner_radius=10 \
+                              popup.background.border_width=2 popup.background.border_color=$POPUP_BORDER \
            --add item power_adapter right \
            --set power_adapter icon="󰚥" drawing=off click_script="$PLUGIN_DIR/power_click.sh" \
-                               popup.background.color=0xff1e1e2e popup.background.corner_radius=10 \
-                               popup.background.border_width=2 popup.background.border_color=0xff444444 \
+                               popup.background.color=$POPUP_BG popup.background.corner_radius=10 \
+                               popup.background.border_width=2 popup.background.border_color=$POPUP_BORDER \
            --add item power_charging right \
            --set power_charging drawing=off click_script="$PLUGIN_DIR/power_click.sh" \
-                                popup.background.color=0xff1e1e2e popup.background.corner_radius=10 \
-                                popup.background.border_width=2 popup.background.border_color=0xff444444 \
+                                popup.background.color=$POPUP_BG popup.background.corner_radius=10 \
+                                popup.background.border_width=2 popup.background.border_color=$POPUP_BORDER \
            --add item power_cpu right \
            --set power_cpu icon="󰍛" drawing=off click_script="$PLUGIN_DIR/power_click.sh" \
-                           popup.background.color=0xff1e1e2e popup.background.corner_radius=10 \
-                           popup.background.border_width=2 popup.background.border_color=0xff444444 \
+                           popup.background.color=$POPUP_BG popup.background.corner_radius=10 \
+                           popup.background.border_width=2 popup.background.border_color=$POPUP_BORDER \
            --add item power_gpu right \
            --set power_gpu icon="󰢮" drawing=off click_script="$PLUGIN_DIR/power_click.sh" \
-                           popup.background.color=0xff1e1e2e popup.background.corner_radius=10 \
-                           popup.background.border_width=2 popup.background.border_color=0xff444444 \
+                           popup.background.color=$POPUP_BG popup.background.corner_radius=10 \
+                           popup.background.border_width=2 popup.background.border_color=$POPUP_BORDER \
            --add item power_ane right \
            --set power_ane icon="󰧑" drawing=off click_script="$PLUGIN_DIR/power_click.sh" \
-                           popup.background.color=0xff1e1e2e popup.background.corner_radius=10 \
-                           popup.background.border_width=2 popup.background.border_color=0xff444444 \
+                           popup.background.color=$POPUP_BG popup.background.corner_radius=10 \
+                           popup.background.border_width=2 popup.background.border_color=$POPUP_BORDER \
            --add item power_display right \
            --set power_display icon="󰍹" drawing=off click_script="$PLUGIN_DIR/power_click.sh" \
-                               popup.background.color=0xff1e1e2e popup.background.corner_radius=10 \
-                               popup.background.border_width=2 popup.background.border_color=0xff444444 \
+                               popup.background.color=$POPUP_BG popup.background.corner_radius=10 \
+                               popup.background.border_width=2 popup.background.border_color=$POPUP_BORDER \
            --add item power_trigger right \
            --set power_trigger drawing=off update_freq=2 script="$PLUGIN_DIR/power.sh" \
            --subscribe power_trigger system_woke power_source_change \
            --add item ip_address right \
-           --set ip_address update_freq=30 script="$PLUGIN_DIR/ip_address.sh"
+           --set ip_address update_freq=30 icon.color=$AYU_STRING \
+                            script="$PLUGIN_DIR/ip_address.sh"
 
 ##### Create popup items for each power widget #####
 "$PLUGIN_DIR/power_popup_factory.sh" power_system
@@ -138,6 +157,39 @@ sketchybar --add item clock right \
 "$PLUGIN_DIR/power_popup_factory.sh" power_gpu
 "$PLUGIN_DIR/power_popup_factory.sh" power_ane
 "$PLUGIN_DIR/power_popup_factory.sh" power_display
+
+##### Islands #####
+# A bracket draws a single background behind a group of items. With the bar
+# itself transparent, these two brackets ARE the visible bar: one pill hugging
+# the left items, one hugging the right, with bare desktop between them.
+#
+# The left bracket must list every space indicator by name, so it is built
+# from the same SPACE_IDS array used above rather than a fixed list.
+
+island=(
+  background.color=$ISLAND_BG
+  background.corner_radius=12
+  background.height=38
+  background.border_width=1
+  background.border_color=$ISLAND_BORDER
+  background.padding_left=0
+  background.padding_right=0
+)
+
+LEFT_MEMBERS=()
+for sid in "${SPACE_IDS[@]}"; do
+  LEFT_MEMBERS+=("space.$sid")
+done
+LEFT_MEMBERS+=(chevron front_app)
+
+sketchybar --add bracket left_island "${LEFT_MEMBERS[@]}" \
+           --set left_island "${island[@]}"
+
+sketchybar --add bracket right_island clock volume battery memory \
+                        power_system power_adapter power_charging \
+                        power_cpu power_gpu power_ane power_display \
+                        power_trigger ip_address \
+           --set right_island "${island[@]}"
 
 ##### Force all scripts to run the first time (never do this in a script) #####
 sketchybar --update
