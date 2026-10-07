@@ -92,11 +92,25 @@ body,
 #layout-v2,
 #_0_app_content,
 .app-content-box,
-main {
-  background: var(--mz-bg) !important;
-  color: var(--mz-fg) !important;
+main,
+/* Headings carry Kagi's display face (measured: h3 rendered in "Lufga")
+ * and do not inherit from body, so name them explicitly. */
+h1, h2, h3, h4, h5, h6,
+.__sri-title-box,
+input, button, select, textarea {
+  background-color: transparent;
+  color: var(--mz-fg);
   font-family: var(--mz-font) !important;
   letter-spacing: normal !important;
+}
+
+html,
+body,
+#layout-v2,
+#_0_app_content,
+.app-content-box,
+main {
+  background: var(--mz-bg) !important;
 }
 
 /* Square everything, kill every transition. A WM does not animate. */
@@ -247,52 +261,53 @@ textarea,
  * Results — each one a block of program output
  * ======================================================================== */
 
+/* Exactly ONE element per result carries the rule.
+ *
+ * Measured on the live SERP: `.sri-group` WRAPS `._0_SRI.search-result` at
+ * identical coordinates (30,218 680x93 both), and `.widgetItem` — the "Blast
+ * from the Past" rows — also carries `._0_SRI`. Listing all of those drew the
+ * guide two and three times over, which is the doubled rule you saw.
+ *
+ * So: `.search-result` and `.__srgi` only, never `.sri-group`, never
+ * `._0_SRI` (too broad), and explicitly never `.widgetItem`.
+ */
 .search-result,
 .sri-group,
-._0_SRI,
 .sr-group,
 .__srgi {
   background: transparent !important;
   border: none !important;
   border-top: none !important;
   border-bottom: none !important;
-  margin: 0 0 0.9em 0 !important;
+}
+
+.sri-group,
+.sr-group {
+  /* A pure wrapper: it must not add its own indent on top of the child's. */
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* A border-left on the element itself, rather than an absolutely-positioned
+ * ::before. Simpler (no positioning context needed), it cannot escape its
+ * box, and it stops at the content edge so the margin between results stays
+ * a clean gap. */
+.search-result:not(.widgetItem),
+.__srgi:not(.widgetItem) {
+  margin: 0 0 1.15em 0 !important;
   padding: 0 0 0 var(--mz-gutter) !important;
-  position: relative;
+  border-left: 1px solid var(--mz-border) !important;
 }
 
-/* The tree guide: a left rule in the border colour that brightens on hover,
- * so a page of results scans like `tree` output.
- *
- * `position: relative` is set on the result blocks above; without it the
- * absolutely-positioned rule escapes to the nearest positioned ancestor and
- * draws down the whole page.
- */
-.search-result::before,
-.sri-group::before,
-._0_SRI::before,
-.__srgi::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0.35em;
-  bottom: 0.1em;
-  border-left: 1px solid var(--mz-border);
-  pointer-events: none;
+.search-result:not(.widgetItem):hover,
+.__srgi:not(.widgetItem):hover {
+  border-left-color: var(--mz-accent) !important;
 }
 
-.search-result:hover::before,
-.sri-group:hover::before,
-._0_SRI:hover::before,
-.__srgi:hover::before {
-  border-left-color: var(--mz-accent);
-}
-
-/* A grouped result nests, so its children must not redraw the parent's rule
- * at the same x — indent them instead. */
+/* Grouped children indent one level under their parent. */
 .sri-group .__srgi,
 .sr-group .__srgi {
-  padding-left: var(--mz-gutter) !important;
+  margin-left: var(--mz-gutter) !important;
 }
 
 /* --- title -------------------------------------------------------------- */
@@ -301,10 +316,17 @@ textarea,
 .__srgi-title,
 ._0_TITLE,
 .__sri-title-box {
-  margin: 0 0 1px 0 !important;
+  margin: 0 !important;
   padding: 0 !important;
   border: none !important;
-  line-height: 1.35 !important;
+  line-height: 1.4 !important;
+  min-height: 0 !important;
+}
+
+/* The per-result controls sit at the right of the title row; keep them from
+ * forcing the row taller than the text needs. */
+.__sri_more_menu_box {
+  align-items: center !important;
 }
 
 .__sri_title_link,
@@ -343,15 +365,25 @@ textarea,
 
 /* --- url ---------------------------------------------------------------- */
 
+/* The URL row is `.__sri-url-box > a.__sri-url > img.favicon + .__sri_url_path_box`.
+ * Measured 29px tall against 27px for the title, which is why the rows looked
+ * loosely stacked; tighten it and close the gap the hidden favicon leaves. */
+.__sri-url-box,
 .__sri-url,
 .__sri_url_path_box,
 ._0_URL,
 .sri-url {
   font-family: var(--mz-font) !important;
   font-size: 11.5px !important;
-  margin: 0 0 2px 0 !important;
+  margin: 0 !important;
   padding: 0 !important;
   border: none !important;
+  min-height: 0 !important;
+  line-height: 1.5 !important;
+}
+
+.__sri-url-box {
+  margin-bottom: 1px !important;
 }
 
 .__sri-url .host,
@@ -375,9 +407,25 @@ textarea,
   color: var(--mz-fg) !important;
   font-family: var(--mz-font) !important;
   font-size: 12px !important;
-  line-height: 1.5 !important;
+  line-height: 1.55 !important;
   margin: 0 !important;
+  padding: 0 !important;
   opacity: 0.85;
+}
+
+/* "Summarise" trails the description; tone it to a dim affordance so it does
+ * not compete with the result text. */
+.summarize-link,
+._0_summarize_page,
+._0_summarize_link {
+  color: var(--mz-comment) !important;
+  font-size: 11px !important;
+  text-decoration: none !important;
+}
+
+.summarize-link:hover,
+._0_summarize_page:hover {
+  color: var(--mz-accent) !important;
 }
 
 /* Kagi bolds the matched terms; colour them instead of shouting. */
@@ -430,17 +478,19 @@ textarea,
  * Panels: instant answers, widgets, sidebar, wiki
  * ======================================================================== */
 
+/* Only the OUTERMOST container of a block is framed.
+ *
+ * Measured: `.widgetContent` contains `.widgetItem`, and framing both drew a
+ * box inside a box on every "Blast from the Past" row. `.results_meta` was
+ * boxing the "67 relevant results in 0.4s" line, which should read as a
+ * comment, not a panel.
+ */
 .instant-answer,
 .ia-wrapper,
 .widgetContent,
-.widgetItem,
-.widgetItems,
 .wikipediaResult,
 .related-items,
-.list_items,
 .image-preview-wrapper,
-.results_meta,
-.footer-search-results,
 .podcast_result,
 .newsResultItem,
 .videoResultItem {
@@ -449,6 +499,39 @@ textarea,
   border-radius: 0 !important;
   color: var(--mz-fg) !important;
   font-family: var(--mz-font) !important;
+  padding: 0.5em 1ch !important;
+}
+
+/* Rows inside a framed container: never their own frame or background. */
+.widgetItem,
+.widgetItems,
+.widget-simple,
+.list_items,
+.widgetContent .widgetItem,
+.widgetContent .widgetItemTitle {
+  background: transparent !important;
+  border: none !important;
+  padding: 1px 0 !important;
+  margin: 0 !important;
+  font-family: var(--mz-font) !important;
+}
+
+.widgetItemTitle {
+  font-size: 12.5px !important;
+  line-height: 1.5 !important;
+}
+
+/* The results-count line: a dim comment above the list. */
+.num_results,
+.results_meta,
+._0_app-data-top-panel {
+  background: transparent !important;
+  border: none !important;
+  color: var(--mz-comment) !important;
+  font-family: var(--mz-font) !important;
+  font-size: 11.5px !important;
+  padding: 0 !important;
+  margin: 0 0 0.6em 0 !important;
 }
 
 .instant-answer,
@@ -479,25 +562,100 @@ textarea,
  * Buttons, toggles, misc controls
  * ======================================================================== */
 
-.btn,
+/* A blanket `button { border: 1px }` put a box around every icon.
+ * Measured: 68 icon-only buttons boxed, including the two controls on every
+ * single result row. Borders belong on text controls only.
+ *
+ * Default: no border anywhere. */
 button,
-.k_ui_button,
-.dd-toggle,
-.dd-toggle-label,
-.more_search_dropdown_box,
-.arrow_dd {
+.btn,
+.k_ui_button {
   background: transparent !important;
   color: var(--mz-dim) !important;
-  border: 1px solid var(--mz-border) !important;
+  border: none !important;
   border-radius: 0 !important;
   font-family: var(--mz-font) !important;
   font-size: 12px !important;
-  padding: 1px 1ch !important;
 }
 
-.btn:hover,
-button:hover,
-.k_ui_button:hover {
+/* Text controls — the filter pills — opt back in.
+ *
+ * Deliberately NOT `.dd-toggle` (a hidden 16x4 checkbox that drives the
+ * dropdown; bordering it drew a stray tick) and NOT a bare `.k_ui_dropdown`
+ * (the per-result "+" control is one, which is the last boxed icon that
+ * survived the first pass). Both measured on the live SERP.
+ */
+.filter-item,
+.dropdown.filter-item,
+.more_search_dropdown_box,
+.landing-category-select {
+  border: 1px solid var(--mz-border) !important;
+  padding: 2px 1ch !important;
+  min-height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* The checkbox that backs each dropdown is presentational only. */
+.dd-toggle,
+input.dd-toggle {
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  appearance: none !important;
+}
+
+/* Dropdowns attached to a result row are icon controls, not text pills. */
+.__sri_more_menu,
+.__sri_more_menu_box .k_ui_dropdown,
+.search-result .k_ui_dropdown,
+._0_SRI .k_ui_dropdown,
+.k_ui_dropdown.app_nav_dropdown,
+#quickSettingsOpenBtn {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* The dropdown's own popup list keeps its frame — it is a panel. */
+.k_ui_dropdown_data_list {
+  border: 1px solid var(--mz-border) !important;
+  background: var(--mz-panel) !important;
+}
+
+/* Icon-only buttons: no border, no padding box, just the glyph. `:has()` is
+ * the precise test (an element whose content is an svg); the explicit ids and
+ * classes cover the handful that wrap theirs in a span. */
+button:has(> svg),
+button:has(> img),
+button:not([class]),
+#clear_searchBar,
+#searchFormSubmit,
+#quickSettingsOpenBtn,
+.btn-icon,
+.clear-search,
+._0_rank-icons,
+.__sri_more_menu_box button,
+.__sri_more_menu_box a,
+.__sri_more_menu .k_ui_dropdown_first_item {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* Icon buttons signal hover by brightening, not by growing a box. */
+button:has(> svg):hover,
+._0_rank-icons:hover,
+.__sri_more_menu_box:hover {
+  background: transparent !important;
+  color: var(--mz-accent) !important;
+  opacity: 1 !important;
+}
+
+/* Text controls still get the reverse-video hover. */
+.dd-toggle:hover,
+.more_search_dropdown_box:hover,
+.filter-item:hover {
   color: var(--mz-bg) !important;
   background: var(--mz-accent) !important;
   border-color: var(--mz-accent) !important;

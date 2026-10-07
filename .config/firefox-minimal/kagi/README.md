@@ -66,9 +66,30 @@ final word.
 
 ## Verification
 
-- `css-tree` parse: **0 errors**, 177 selectors, 0 invalid declarations.
-- 15,455 chars of Kagi's 40,000 limit (24,545 spare for your own additions).
-- Rendered and inspected at 1265px and at 430px (iPhone width).
+Validated **against the live SERP**, not only the mock. `tools/kagi_live.py`
+and `tools/kagi_diag.py` drive a *copy* of the logged-in scratch profile
+(your own window keeps running), load a real results page with `?no_css` to
+get Kagi's stock markup, then inject `kagi.css` the same way Kagi's settings
+do — so fixes are measured on real results without touching the account.
+
+```sh
+python3 ../tools/kagi_live.py --dump      # live DOM structure
+python3 ../tools/kagi_diag.py             # defect counts, before/after
+```
+
+Current state, measured on the live page:
+
+| check | before | after |
+|---|---|---|
+| doubled guide rules | 1 nested pair | **0** |
+| icon buttons with a border | 68 | **0** |
+| nested bordered panels | widgetContent ⊃ widgetItem | **0** |
+| headings in Kagi's own face | `h3` = Lufga | **0** (all Hack) |
+| URL row height | 29px | 17px |
+
+- `css-tree`: **0 parse errors**, 236 selectors, 0 invalid declarations.
+- 20,511 chars of the 40,000 limit (19,489 spare).
+- Rendered at 1265px and 430px (iPhone width).
 
 ## Selector notes
 
@@ -93,7 +114,7 @@ documented list plus two maintained community themes
 The older `.sri-*` (single underscore) names still appear in places; rules
 target both where it is cheap to do so.
 
-### Gotchas
+### Gotchas found on the live page
 
 1. **`:visited` must precede `:hover`** (LVHA order) or hover wins for links
    you have been to. Firefox also restricts which properties `:visited` may
@@ -107,3 +128,19 @@ target both where it is cheap to do so.
 4. **Kagi's own CSS variables do most of the work.** Setting
    `--search-result-title`, `--background-color` and friends at `:root` styles
    far more of the page than element rules, and survives markup changes better.
+5. **`.sri-group` WRAPS `.search-result` at identical coordinates**, and
+   `.widgetItem` also carries `._0_SRI`. Styling that whole family draws the
+   guide rule two or three times over. Exactly one element per result may
+   carry it — `.search-result` and `.__srgi`, excluding `.widgetItem`.
+6. **Never blanket-border `button`.** Kagi uses `<button>` for 68 icon-only
+   controls, two on every result row; they end up boxed. Border text controls
+   explicitly and give icon buttons `border: none`.
+7. **`.dd-toggle` is a hidden 16x4 checkbox**, not a visible pill. Bordering
+   it draws a stray tick beside each filter dropdown.
+8. **A `.k_ui_dropdown` is not always a text control** — the per-result "+"
+   is one. Scope dropdown framing to the filter bar, and leave the popup list
+   (`.k_ui_dropdown_data_list`) framed since it genuinely is a panel.
+9. **Frame only the outermost container.** `.widgetContent` contains
+   `.widgetItem`; framing both gives "Blast from the Past" a box inside a box.
+10. **Headings do not inherit `font-family` from `body`** here — `h3` rendered
+    in Kagi's display face (Lufga) until named explicitly.
