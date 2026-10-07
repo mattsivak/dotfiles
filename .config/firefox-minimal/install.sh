@@ -53,9 +53,28 @@ fi
 say "profile: $PROFILE"
 
 # Firefox rewrites prefs.js on exit and would clobber a live edit.
-# A dry run writes nothing, so it is safe to inspect while Firefox is open.
-if [ "$DRY_RUN" = 0 ] && pgrep -x firefox >/dev/null 2>&1; then
-  echo "Firefox is running. Quit it first (it rewrites prefs.js on exit)." >&2
+#
+# The test must be whether THIS profile is open, not whether any Firefox is
+# running: a second Firefox on a different profile (the scratch one from
+# try.sh) is harmless, and `pgrep -x firefox` refuses the install for no
+# reason. Check for a live lock on the target profile instead.
+#
+# A dry run writes nothing, so it is always safe.
+profile_in_use() {
+  # An open profile has file handles held against it. .parentlock persists
+  # after an unclean exit, so its mere presence proves nothing.
+  if command -v lsof >/dev/null 2>&1; then
+    [ "$(lsof +D "$PROFILE" 2>/dev/null | grep -ci firefox)" -gt 0 ] && return 0
+  fi
+  # Fallback: an explicit --profile argument naming this directory.
+  pgrep -f -- "--profile $PROFILE" >/dev/null 2>&1 && return 0
+  return 1
+}
+
+if [ "$DRY_RUN" = 0 ] && profile_in_use; then
+  echo "That profile is open in Firefox. Quit it first — Firefox rewrites" >&2
+  echo "prefs.js on exit and would clobber the install." >&2
+  echo "  profile: $PROFILE" >&2
   exit 1
 fi
 
@@ -109,4 +128,4 @@ say "  Ctrl+Tab   next tab            Cmd+[ / Cmd+]    back / forward"
 say
 say "Tweak the knobs at the top of chrome/userChrome.css:"
 say "  --mz-tabs-display: none      hide the tab strip entirely"
-say "  --mz-traffic-lights: -moz-box   bring back the macOS window buttons"
+say "  --mz-traffic-lights: flex    bring back the macOS window buttons"
