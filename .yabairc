@@ -55,6 +55,11 @@ yabai -m config window_shadow off
 # Space indicators show a glyph per app, so the bar has to refresh whenever the
 # set of windows on a space changes -- not just on create/destroy, but also when
 # a window moves between spaces or is minimised out of view.
+#
+# window_change also drives the layout indicator. Changing a space's layout
+# (yabai -m space --layout stack) emits no sketchybar event of its own, and
+# skhd runs that command directly, so the refresh is appended to those bindings
+# in skhdrc rather than inferred here.
 for ev in window_created window_destroyed window_moved \
           window_minimized window_deminimized; do
   yabai -m signal --add event="$ev" action="sketchybar -m --trigger window_change &> /dev/null"

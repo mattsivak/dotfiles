@@ -13,6 +13,9 @@ if [ "$LAYOUT" ]; then
   for SPACE in $SPACES; do
     yabai -m config --space "$SPACE" layout "$LAYOUT"
   done
+  # Changing a layout emits no sketchybar event, so nudge the bar's layout
+  # indicator directly.
+  sketchybar -m --trigger window_change &> /dev/null
 else
   echo "No layout selected."
 fi

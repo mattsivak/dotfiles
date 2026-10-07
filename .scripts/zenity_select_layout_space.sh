@@ -13,6 +13,9 @@ LAYOUT=$(zenity --list --title="Select Yabai Layout" --column="Layouts" bsp stac
 # Check if the user selected a layout and apply it to the current space only
 if [ "$LAYOUT" ]; then
   yabai -m config --space "$CURRENT_SPACE" layout "$LAYOUT"
+  # Changing a layout emits no sketchybar event, so nudge the bar's layout
+  # indicator directly.
+  sketchybar -m --trigger window_change &> /dev/null
 else
   echo "No layout selected."
 fi
