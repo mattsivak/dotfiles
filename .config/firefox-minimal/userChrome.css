@@ -1049,16 +1049,157 @@ findbar *,
 
 #PersonalToolbar,
 #sidebar-header,
-#sidebar-splitter,
 #status-bar,
 #notification-popup-box,
 #customization-container > * {
   display: none !important;
 }
 
+/* ===========================================================================
+ * 5b. Bookmarks sidebar — the keyboard-navigable bookmark list
+ *
+ * Cmd+B toggles it. Once focused: type to jump, arrows to move, Enter opens,
+ * Cmd+B again dismisses. Styled as a tmux-style pane rather than a GUI panel.
+ * ======================================================================== */
+
 #sidebar-box {
   background: var(--mz-bg) !important;
   border-inline-end: 1px solid var(--mz-border) !important;
+  max-width: 34ch !important;
+  min-width: 22ch !important;
+}
+
+#sidebar-splitter {
+  background: var(--mz-border) !important;
+  border: none !important;
+  width: 1px !important;
+  min-width: 1px !important;
+  max-width: 1px !important;
+}
+
+#sidebar,
+#sidebar-box browser {
+  background: var(--mz-bg) !important;
+}
+
+/* The tree itself. `tree` and `treechildren` are XUL; the rows are painted by
+ * ::-moz-tree-* pseudo-elements, which do NOT respond to ordinary background
+ * or color rules — they each need their own pseudo-element rule. */
+#bookmarksPanel,
+#bookmarks-view,
+#history-panel,
+#historyTree {
+  background: var(--mz-bg) !important;
+  color: var(--mz-fg) !important;
+  font-family: var(--mz-font) !important;
+  font-size: var(--mz-font-size) !important;
+}
+
+treechildren::-moz-tree-row {
+  background: transparent !important;
+  border: none !important;
+  min-height: 20px !important;
+}
+
+treechildren::-moz-tree-cell-text {
+  color: var(--mz-fg) !important;
+  font-family: var(--mz-font) !important;
+  font-size: var(--mz-font-size) !important;
+}
+
+/* Hover: brighten only. */
+treechildren::-moz-tree-row(hover) {
+  background: var(--mz-line) !important;
+}
+
+/* Selection: reverse video, matching the tab strip and the urlbar results. */
+treechildren::-moz-tree-row(selected),
+treechildren::-moz-tree-row(selected, focus) {
+  background: var(--mz-accent) !important;
+}
+
+treechildren::-moz-tree-cell-text(selected),
+treechildren::-moz-tree-cell-text(selected, focus) {
+  color: var(--mz-bg) !important;
+  font-weight: bold !important;
+}
+
+/* Favicons in the tree are the same noise as in the tab strip. */
+treechildren::-moz-tree-image {
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Separator lines and the drop feedback bar. */
+treechildren::-moz-tree-separator {
+  border-color: var(--mz-border) !important;
+}
+
+/* The sidebar's own search field.
+ *
+ * It lives in the sidebar's SEPARATE document (#sidebar is a browser element),
+ * so userChrome.css reaches it only because that document is also chrome.
+ * Firefox 157 renders it as a rounded pill via moz-input-search / search-box;
+ * the ids differ per panel, hence the broad list. */
+#sidebar .textbox-search-box,
+#search-box,
+#searchFilter,
+#sidebar moz-input-search,
+#sidebar moz-input-search::part(input),
+#sidebar input[type="search"],
+.sidebar-panel moz-input-search,
+.sidebar-panel moz-input-search::part(input),
+#bookmarksPanel moz-input-search,
+#bookmarksPanel moz-input-search::part(input),
+#history-panel moz-input-search,
+#history-panel moz-input-search::part(input) {
+  background: var(--mz-panel) !important;
+  color: var(--mz-fg) !important;
+  border: 1px solid var(--mz-border) !important;
+  border-radius: 0 !important;
+  font-family: var(--mz-font) !important;
+  font-size: var(--mz-font-size) !important;
+  min-height: 24px !important;
+  padding: 1px 1ch !important;
+  box-shadow: none !important;
+}
+
+#sidebar .textbox-search-box:focus-within,
+#searchFilter:focus-within,
+#sidebar moz-input-search:focus-within,
+#bookmarksPanel moz-input-search:focus-within {
+  border-color: var(--mz-accent) !important;
+  outline: none !important;
+}
+
+/* The magnifier glyph inside it. */
+#sidebar moz-input-search::part(icon),
+#bookmarksPanel moz-input-search::part(icon) {
+  fill: var(--mz-dim) !important;
+  opacity: 0.7;
+}
+
+/* KNOWN LIMITATION — the search field keeps a rounded pill.
+ *
+ * The pill is `input#input` inside moz-input-search's SHADOW ROOT, measured at
+ * border-radius 9999px. It exposes no `part` attribute, so `::part(input)`
+ * matches nothing, and it does not read a border-radius custom property, so
+ * inheriting one in does not reach it either — both were tried and measured
+ * still 9999px. A shadow boundary without an exported part cannot be styled
+ * from an outside stylesheet; closing this would need userChrome.js.
+ *
+ * It is one 198x36 control inside a panel that is itself optional, so it is
+ * left alone rather than papered over. The surrounding container, the tree,
+ * and the selection colours are all themed.
+ */
+
+/* The dotted focus ring Firefox draws on the tree's first row. */
+#bookmarksPanel treechildren::-moz-tree-row(current),
+treechildren::-moz-tree-row(current) {
+  outline: none !important;
+  border: none !important;
 }
 
 /* Link target on hover: a WM message line, bottom-left, square, mono. */

@@ -82,3 +82,24 @@ user_pref("extensions.pocket.enabled", false);
 user_pref("identity.fxaccounts.toolbar.enabled", false);
 user_pref("browser.privatebrowsing.vpnpromourl", "");
 user_pref("browser.preferences.moreFromMozilla", false);
+
+// --- bookmarks ------------------------------------------------------------
+// Firefox has native urlbar "restriction tokens" that scope a query to one
+// source. `*` restricts to bookmarks, so typing `* rust` in the prompt
+// searches only bookmarks. These prefs keep that behaviour switched on and
+// make the bookmark results worth reading.
+//
+// Cmd+Shift+O opens the full Bookmarks Library (keyboard-navigable: type to
+// filter, arrows to move, Enter to open). Cmd+B toggles the sidebar.
+user_pref("browser.urlbar.suggest.bookmark", true);
+user_pref("browser.urlbar.suggest.openpage", true);
+user_pref("browser.urlbar.suggest.history", true);
+
+// Rank bookmarks above plain history in the prompt, so a thing you deliberately
+// saved outranks a page you happened to visit.
+user_pref("browser.urlbar.showSearchSuggestionsFirst", false);
+
+// The sidebar is where the keyboard-navigable bookmark tree lives; keep it on
+// the left and let it be summoned without the rest of the sidebar furniture.
+user_pref("sidebar.position_start", true);
+user_pref("sidebar.revamp", false);
