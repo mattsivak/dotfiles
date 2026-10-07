@@ -23,3 +23,4 @@
 # Written by theme_toggle.sh at runtime; the current mode is machine state,
 # not configuration.
 .config/sketchybar/.theme_override.sh
+.config/sketchybar/.notch_cache

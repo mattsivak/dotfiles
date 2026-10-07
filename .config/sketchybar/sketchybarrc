@@ -12,6 +12,12 @@ PLUGIN_DIR="$CONFIG_DIR/plugins"
 # none) and NOTCH_WIDTH (real notch width in points). Both detected live.
 . "$CONFIG_DIR/notch.sh"
 
+# Cache the detected index for plugin scripts. Detection costs ~1.5s (swift +
+# system_profiler), which is fine once at startup but not on a per-event script
+# -- window_title reads this file instead. Rewritten on every reload, which is
+# precisely when the display layout may have changed.
+printf '%s\n' "$NOTCH_DISPLAY" > "$CONFIG_DIR/.notch_cache"
+
 ##### Bar Appearance #####
 # Configuring the general appearance of the bar.
 # These are only some of the options available. For all options see:
