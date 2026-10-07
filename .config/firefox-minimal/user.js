@@ -103,3 +103,7 @@ user_pref("browser.urlbar.showSearchSuggestionsFirst", false);
 // the left and let it be summoned without the rest of the sidebar furniture.
 user_pref("sidebar.position_start", true);
 user_pref("sidebar.revamp", false);
+
+// The bookmarks toolbar is the second strip (one cell per folder), so it must
+// actually be shown. "newtab" would hide it on every normal page.
+user_pref("browser.toolbars.bookmarks.visibility", "always");

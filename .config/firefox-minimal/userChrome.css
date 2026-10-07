@@ -1047,11 +1047,156 @@ findbar *,
  * 5. Bookmarks bar, sidebar header, status bar
  * ======================================================================== */
 
-#PersonalToolbar,
 #sidebar-header,
 #status-bar,
 #notification-popup-box,
 #customization-container > * {
+  display: none !important;
+}
+
+/* ===========================================================================
+ * 3c. Bookmarks toolbar — the second strip: one cell per folder
+ *
+ *     ┌────────────────────────────────────────────────┐
+ *     │ 1 github.com   2 lobste.rs                  ⛊ 🧩│  tabs
+ *     ├────────────────────────────────────────────────┤
+ *     │ Work  Random  Keyboards  Hermes                │  bookmarks
+ *     ├────────────────────────────────────────────────┤
+ *
+ * Keyboard: Cmd+Shift+B toggles it. Tab/F6 moves focus into the toolbar, then
+ * LEFT/RIGHT walk the folders, DOWN or Enter opens one, UP/DOWN walk its menu,
+ * Enter opens the bookmark, Esc closes. That is Firefox's native toolbar
+ * keyboard model — no scripting needed, it just has to be visible and styled.
+ *
+ * Set --mz-bookmarks-display: none to remove this row entirely.
+ * ======================================================================== */
+
+:root,
+#main-window {
+  --mz-bookmarks-display: flex;
+}
+
+#PersonalToolbar {
+  display: var(--mz-bookmarks-display) !important;
+  appearance: none !important;
+  min-height: var(--mz-strip-height) !important;
+  height: var(--mz-strip-height) !important;
+  max-height: var(--mz-strip-height) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: var(--mz-bg) !important;
+  border: none !important;
+  border-top: 1px solid var(--mz-border) !important;
+  align-items: center !important;
+}
+
+/* Hidden while the toolbar is empty, so a fresh profile shows no dead row. */
+#PersonalToolbar[collapsed="true"] {
+  display: none !important;
+}
+
+#PlacesToolbar,
+#PlacesToolbarItems,
+#PersonalToolbar > #personal-bookmarks {
+  background: transparent !important;
+  min-height: var(--mz-strip-height) !important;
+  height: var(--mz-strip-height) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Each folder/bookmark: a flat word, like a window-list entry. */
+#PlacesToolbarItems > .bookmark-item,
+#PersonalToolbar .bookmark-item {
+  appearance: none !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  color: var(--mz-dim) !important;
+  font-family: var(--mz-font) !important;
+  font-size: var(--mz-font-size) !important;
+  font-weight: normal !important;
+  padding: 0 0.9ch !important;
+  margin: 0 !important;
+  min-height: var(--mz-strip-height) !important;
+  height: var(--mz-strip-height) !important;
+  max-width: 24ch !important;
+}
+
+/* Folders read as the primary thing on this row. */
+#PlacesToolbarItems > .bookmark-item[container] {
+  color: var(--mz-fg) !important;
+}
+
+#PlacesToolbarItems > .bookmark-item:hover {
+  background: var(--mz-line) !important;
+  color: var(--mz-fg) !important;
+}
+
+/* Keyboard focus and the open folder both read as reverse video, so arrowing
+ * along the row is obvious without a mouse. */
+#PlacesToolbarItems > .bookmark-item:focus,
+#PlacesToolbarItems > .bookmark-item:focus-visible,
+#PlacesToolbarItems > .bookmark-item[open] {
+  background: var(--mz-accent) !important;
+  color: var(--mz-bg) !important;
+  outline: none !important;
+  font-weight: bold !important;
+}
+
+/* Favicons and folder glyphs: same noise as in the tab strip. */
+#PlacesToolbarItems > .bookmark-item > .toolbarbutton-icon,
+#PersonalToolbar .bookmark-item > .toolbarbutton-icon,
+#PlacesToolbarItems > .bookmark-item > .toolbarbutton-menu-dropmarker,
+#PersonalToolbar .toolbarbutton-menu-dropmarker {
+  display: none !important;
+}
+
+/* The "»" overflow chevron when the row is wider than the window. */
+#PlacesChevron {
+  appearance: none !important;
+  background: transparent !important;
+  border: none !important;
+  color: var(--mz-dim) !important;
+  padding: 0 0.6ch !important;
+}
+
+#PlacesChevron:hover {
+  color: var(--mz-accent) !important;
+}
+
+/* Firefox's "Other Bookmarks" button at the right end. */
+#OtherBookmarks,
+#PersonalToolbar #import-button,
+#personal-toolbar-empty {
+  display: none !important;
+}
+
+/* The dropped-open folder menu: same square panel as everything else. */
+#PlacesToolbar menupopup,
+.bookmark-item menupopup {
+  background: var(--mz-panel) !important;
+  border: 1px solid var(--mz-border) !important;
+  padding: 2px 0 !important;
+}
+
+#PlacesToolbar menupopup menuitem,
+#PlacesToolbar menupopup menu {
+  font-family: var(--mz-font) !important;
+  font-size: var(--mz-font-size) !important;
+  padding: 1px 1.5ch !important;
+  min-height: 0 !important;
+  color: var(--mz-fg) !important;
+}
+
+#PlacesToolbar menupopup menuitem[_moz-menuactive="true"],
+#PlacesToolbar menupopup menu[_moz-menuactive="true"] {
+  background: var(--mz-accent) !important;
+  color: var(--mz-bg) !important;
+}
+
+#PlacesToolbar menupopup .menu-iconic-icon,
+#PlacesToolbar menupopup image {
   display: none !important;
 }
 
@@ -1181,18 +1326,29 @@ treechildren::-moz-tree-separator {
   opacity: 0.7;
 }
 
-/* KNOWN LIMITATION — the search field keeps a rounded pill.
+/* The sidebar search field keeps a rounded pill. This is NOT fixable from CSS.
  *
- * The pill is `input#input` inside moz-input-search's SHADOW ROOT, measured at
- * border-radius 9999px. It exposes no `part` attribute, so `::part(input)`
- * matches nothing, and it does not read a border-radius custom property, so
- * inheriting one in does not reach it either — both were tried and measured
- * still 9999px. A shadow boundary without an exported part cannot be styled
- * from an outside stylesheet; closing this would need userChrome.js.
+ * Proven by elimination, measuring computed border-radius after each attempt
+ * (baseline 9999px):
  *
- * It is one 198x36 control inside a panel that is itself optional, so it is
- * left alone rather than papered over. The surrounding container, the tree,
- * and the selection colours are all themed.
+ *   ::part(input)                              no part exported  -> 9999px
+ *   --input-text-border-radius on the host     var resolves to 0 -> 9999px
+ *   ...on :root of the sidebar document                          -> 9999px
+ *   --border-radius-circle: 0                                    -> 9999px
+ *   a <style> injected into the sidebar document                 -> 9999px
+ *   an adoptedStyleSheet pushed INTO the shadow root             ->    0px
+ *
+ * The giveaway is the middle case: reading the shadow sheet
+ * (chrome://global/content/elements/moz-input-text.css) shows
+ * `#input { border-radius: var(--input-text-border-radius) }`, and the
+ * variable genuinely resolves to 0 on that element — yet the used value stays
+ * 9999px, so the radius is not coming from the cascade we can reach.
+ *
+ * Only the last route works, and it needs script (userChrome.js), which is a
+ * much larger thing to take on than one rounded box in an optional panel.
+ * Left alone deliberately: the container, the tree, the rows and the
+ * selection colours are all themed, and the bookmarks TOOLBAR — the second
+ * strip, which is the primary UI — has no such problem.
  */
 
 /* The dotted focus ring Firefox draws on the tree's first row. */

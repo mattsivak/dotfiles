@@ -69,7 +69,10 @@ def main():
     ap.add_argument("source")
     ap.add_argument("-o", "--output", default="-")
     ap.add_argument("--folder", default="Helium",
-                    help="wrap everything in this folder (default: Helium)")
+                    help="name for the wrapper folder when --wrap is used")
+    ap.add_argument("--wrap", action="store_true",
+                    help="nest everything under one folder instead of merging "
+                         "the bookmark bar into Firefox's Bookmarks Toolbar")
     a = ap.parse_args()
 
     with open(a.source, encoding="utf-8") as f:
@@ -91,11 +94,33 @@ def main():
             continue
         if not root.get("children"):
             continue
-        body.append(f'        <DT><H3>{esc(labels.get(key, key))}</H3>')
-        body.append("        <DL><p>")
-        render(root, 3, body, counts)
-        body.append("        </DL><p>")
 
+        if key == "bookmark_bar" and not a.wrap:
+            # PERSONAL_TOOLBAR_FOLDER="true" is the marker Firefox's importer
+            # looks for to merge a folder into the Bookmarks Toolbar rather
+            # than filing it under "Other Bookmarks". Without it the folders
+            # land somewhere the toolbar never shows.
+            body.append('    <DT><H3 PERSONAL_TOOLBAR_FOLDER="true">'
+                        "Bookmarks Toolbar</H3>")
+            body.append("    <DL><p>")
+            render(root, 2, body, counts)
+            body.append("    </DL><p>")
+        else:
+            body.append(f'    <DT><H3>{esc(labels.get(key, key))}</H3>')
+            body.append("    <DL><p>")
+            render(root, 2, body, counts)
+            body.append("    </DL><p>")
+
+    if a.wrap:
+        body = [f"    <DT><H3>{esc(a.folder)}</H3>", "    <DL><p>",
+                *["    " + b for b in body], "    </DL><p>"]
+
+    # Firefox's importer treats the OUTERMOST <DL> as the bookmarks-menu root
+    # and only merges a folder into the real toolbar when
+    # PERSONAL_TOOLBAR_FOLDER sits on a DIRECT child of that list. Nesting it
+    # one level deeper (inside a wrapper folder) produces an ordinary folder
+    # that happens to be *named* "Bookmarks Toolbar", filed under the menu —
+    # measured: 0 items on toolbar_____, the tree under menu________ instead.
     doc = [
         "<!DOCTYPE NETSCAPE-Bookmark-file-1>",
         "<!-- This is an automatically generated file.",
@@ -105,10 +130,7 @@ def main():
         "<TITLE>Bookmarks</TITLE>",
         "<H1>Bookmarks</H1>",
         "<DL><p>",
-        f"    <DT><H3>{esc(a.folder)}</H3>",
-        "    <DL><p>",
         *body,
-        "    </DL><p>",
         "</DL><p>",
     ]
     text = "\n".join(doc) + "\n"

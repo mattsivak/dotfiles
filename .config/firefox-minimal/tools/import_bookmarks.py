@@ -32,19 +32,52 @@ try {
   const { PlacesUtils } = ChromeUtils.importESModule(
     "resource://gre/modules/PlacesUtils.sys.mjs");
 
-  const before = (await (await PlacesUtils.promiseDBConnection()).execute(
-    "SELECT count(*) AS n FROM moz_bookmarks WHERE type = 1"))[0]
-      .getResultByName("n");
+  const count = async () =>
+    (await (await PlacesUtils.promiseDBConnection()).execute(
+      "SELECT count(*) AS n FROM moz_bookmarks WHERE type = 1"))[0]
+        .getResultByName("n");
 
+  const before = await count();
   await BookmarkHTMLUtils.importFromFile(path, { replace: false });
   await new Promise(r => setTimeout(r, 3000));
 
-  const after = (await (await PlacesUtils.promiseDBConnection()).execute(
-    "SELECT count(*) AS n FROM moz_bookmarks WHERE type = 1"))[0]
-      .getResultByName("n");
+  // The importer does NOT honour PERSONAL_TOOLBAR_FOLDER reliably: measured,
+  // it created an ordinary folder *named* "Bookmarks Toolbar" under the menu
+  // root and left toolbar_____ empty. So move that folder's children onto the
+  // real toolbar afterwards, which is what makes them appear on the strip.
+  let moved = 0;
+  const menuKids = await PlacesUtils.bookmarks.fetch(
+    { parentGuid: PlacesUtils.bookmarks.menuGuid }, null, { concurrent: true });
+  const tree = await PlacesUtils.promiseBookmarksTree(
+    PlacesUtils.bookmarks.menuGuid);
+  for (const child of (tree.children || [])) {
+    if (child.type !== PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER &&
+        child.typeCode !== 2) continue;
+    if (!/^bookmarks? toolbar$/i.test(child.title || "")) continue;
+    for (const g of (child.children || [])) {
+      await PlacesUtils.bookmarks.update({
+        guid: g.guid,
+        parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+        index: PlacesUtils.bookmarks.DEFAULT_INDEX,
+      });
+      moved++;
+    }
+    // drop the now-empty placeholder folder
+    const fresh = await PlacesUtils.promiseBookmarksTree(child.guid);
+    if (!fresh.children || !fresh.children.length) {
+      await PlacesUtils.bookmarks.remove(child.guid);
+    }
+  }
 
-  cb(JSON.stringify({ before, after, added: after - before }));
-} catch (e) { cb("ERR " + e); }
+  const onToolbar = (await (await PlacesUtils.promiseDBConnection()).execute(
+    `SELECT count(*) AS n FROM moz_bookmarks b
+       JOIN moz_bookmarks p ON b.parent = p.id
+      WHERE p.guid = 'toolbar_____'`))[0].getResultByName("n");
+
+  cb(JSON.stringify({ before, after: await count(),
+                      added: (await count()) - before,
+                      movedToToolbar: moved, onToolbar }));
+} catch (e) { cb("ERR " + e + " | " + e.stack); }
 })();
 """
 
