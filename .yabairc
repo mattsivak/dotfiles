@@ -61,4 +61,17 @@ yabai -m signal --add event=window_destroyed action="sketchybar -m --trigger win
 # config or the pills stay associated with displays that moved.
 yabai -m signal --add event=display_added action="sketchybar --reload &> /dev/null"
 yabai -m signal --add event=display_removed action="sketchybar --reload &> /dev/null"
+
+# Desktop icons appear only while the visible space on the main display is
+# empty. Every event that can change "is this space empty" has to re-evaluate:
+# windows arriving and leaving, minimise/deminimise (a minimised window covers
+# nothing), moving a window between spaces or displays, and switching space.
+#
+# display_added/removed are included because the main display itself can
+# change when monitors come and go.
+DESKTOP_ICONS="$HOME/.scripts/desktop_icons_auto.sh"
+for ev in window_created window_destroyed window_minimized window_deminimized \
+          window_moved space_changed display_added display_removed system_woke; do
+  yabai -m signal --add event="$ev" action="$DESKTOP_ICONS &> /dev/null"
+done
 #yabai -m signal --add event=window_focused action="yabai -m config window_opacity on"
