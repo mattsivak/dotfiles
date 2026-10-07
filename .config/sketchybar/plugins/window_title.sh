@@ -131,23 +131,30 @@ NOTCH_KEY="display-${NOTCH_DISPLAY:-0}"
 GEOM=$(sketchybar --query front_app --query notch_left --query cpu 2>/dev/null)
 
 AVAILABLE=$(printf '%s' "$GEOM" | jq -rs --arg notchkey "$NOTCH_KEY" '
-  # Where this item starts: the right edge of front_app, on whichever display
-  # is currently drawing it. -9999 is sketchybar s "not on this display".
-  (map(select(.name == "front_app")) | .[0].bounding_rects
-   | to_entries | map(select(.value.origin[0] > -9000)) | .[0]) as $anchor
-  | if $anchor == null then empty
+  . as $items
+  # The bar draws on every display at once and all copies share one label, so
+  # the budget is the TIGHTEST display, not whichever happens to come first.
+  # Taking the first rect used the external monitor is 1603pt on the built-in,
+  # where only 527pt exists, and the title ran under the notch.
+  | ( $items | map(select(.name == "front_app")) | .[0].bounding_rects
+      | to_entries | map(select(.value.origin[0] > -9000)) ) as $anchors
+  | if ($anchors | length) == 0 then empty
     else
-      $anchor.key as $disp
-      | ($anchor.value.origin[0] + $anchor.value.size[0]) as $x
-      # The notch anchor is only a wall on the built-in display. Elsewhere it
-      # collapses to the screen centre and means nothing.
-      | (if $disp == $notchkey then ["notch_left", "cpu"] else ["cpu"] end) as $names
-      | ( map(select(.name as $n | $names | index($n))
-              | .bounding_rects[$disp]
-              | select(. != null)
-              | .origin[0])
-          | map(select(. > $x)) ) as $walls
-      | if ($walls | length) == 0 then empty else (($walls | min) - $x) end
+      [ $anchors[]
+        | .key as $disp
+        | (.value.origin[0] + .value.size[0]) as $x
+        # The notch anchor is only a wall on the built-in display. Elsewhere
+        # sketchybar parks it at screen centre, where it means nothing.
+        | (if $disp == $notchkey then ["notch_left", "cpu"] else ["cpu"] end) as $names
+        | ( $items
+            | map(select(.name as $n | $names | index($n))
+                  | .bounding_rects[$disp]
+                  | select(. != null)
+                  | .origin[0])
+            | map(select(. > $x)) ) as $walls
+        | if ($walls | length) == 0 then empty else (($walls | min) - $x) end
+      ] as $budgets
+      | if ($budgets | length) == 0 then empty else ($budgets | min) end
     end
 ' 2>/dev/null)
 
