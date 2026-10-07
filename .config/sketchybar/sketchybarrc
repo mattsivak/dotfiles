@@ -35,6 +35,12 @@ BAR_GAP=8
 # by BAR_GAP on each side opens that clearance.
 NOTCH_GAP=$((NOTCH_WIDTH + 2 * BAR_GAP))
 
+# Inner breathing room: the distance from a pill's rounded edge to its first
+# and last item. Set per-item below rather than via the bar's padding_left /
+# padding_right -- those inset the bar's own content box, which shrinks the
+# pills inward from the screen edges instead of padding inside them.
+PILL_INSET=12
+
 # yabai's external_bar must reserve BAR_GAP + BAR_HEIGHT (8 + 38 = 46).
 # margin insets horizontally only; it adds no vertical space.
 sketchybar --bar position=top height=$BAR_HEIGHT color=0x00000000 \
@@ -94,6 +100,11 @@ do
   )
   sketchybar --add space space."$sid" left --set space."$sid" "${space[@]}"
 done
+
+# The leading item carries the pill's left inset. padding_left on an item is
+# space before it, so putting it on the first space indicator pushes the whole
+# group clear of the rounded corner.
+sketchybar --set space."${SPACE_IDS[0]}" padding_left=$PILL_INSET
 
 ##### Adding Left Items #####
 # We add some regular items to the left side of the bar, where
@@ -163,6 +174,10 @@ sketchybar --add item clock right \
            --add item ip_address right \
            --set ip_address update_freq=30 icon.color=$AYU_STRING \
                             script="$PLUGIN_DIR/ip_address.sh"
+
+# Right-side items are laid out right-to-left, so the clock is the rightmost
+# thing in the bar and carries the pill's trailing inset.
+sketchybar --set clock padding_right=$PILL_INSET
 
 ##### Create popup items for each power widget #####
 "$PLUGIN_DIR/power_popup_factory.sh" power_system
