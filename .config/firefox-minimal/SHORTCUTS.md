@@ -49,10 +49,18 @@ is on.
 
 ### Navigating the second strip by keyboard
 
-Firefox's native toolbar model — no scripting involved:
+**F6 does not work.** Tested with real keystrokes through the widget layer:
+six F6 presses left focus on `browser` every time. It is widely documented as
+the chrome-cycling key and it simply does not reach this toolbar on macOS
+Firefox 157.
+
+The route that *does* work, measured by reading `document.activeElement`
+after each press:
 
 ```
-F6 (or Tab)   move focus into the toolbar
+Cmd+L         focus the address bar
+Tab           -> Extensions button
+Tab           -> first bookmark cell       <- you are on the strip
 ← / →         walk between folders
 ↓ or Enter    open the focused folder
 ↑ / ↓         move within the open menu
@@ -61,7 +69,14 @@ Enter         open the bookmark
 Esc           close the menu / leave the toolbar
 ```
 
+From a focused page, plain `Tab` x4 gets there too, but the tab order starts
+inside the page content so it is not reliable.
+
 The focused cell is reverse-video gold, so the position is always visible.
+
+A single dedicated key (no F-keys, no Tab-walking) is possible but needs
+userChrome.js, which means an autoconfig file inside `/Applications/Firefox.app`
+— see README, "A real keybind for the bookmark strip".
 
 ### Searching bookmarks only
 
