@@ -22,17 +22,26 @@ PLUGIN_DIR="$CONFIG_DIR/plugins"
 # The bar surface itself is transparent and chromeless. What you see are the
 # brackets defined at the bottom of this file, which draw the pills.
 #
-# notch_width is the measured width of this machine's notch rather than
-# sketchybar's generic 200pt default, so the two halves on the built-in
-# display stop exactly at the notch edges.
-#
-# yabai's external_bar must reserve height + y_offset (38 + 8 = 46).
+# One gap value governs the whole layout: BAR_GAP is the distance from the
+# screen's top edge down to the pills, from the side edges in, and from each
+# pill to the notch. Deriving all three from one variable is what keeps the
+# notch gap visually equal to the top gap instead of drifting apart when the
+# bar is retuned.
+BAR_HEIGHT=38
+BAR_GAP=8
+
+# sketchybar centres the notch gap on whatever notch_width it is told, so the
+# measured physical width would leave the pills touching the notch. Padding it
+# by BAR_GAP on each side opens that clearance.
+NOTCH_GAP=$((NOTCH_WIDTH + 2 * BAR_GAP))
+
+# yabai's external_bar must reserve BAR_GAP + BAR_HEIGHT (8 + 38 = 46).
 # margin insets horizontally only; it adds no vertical space.
-sketchybar --bar position=top height=38 color=0x00000000 \
-                 corner_radius=0 margin=8 y_offset=8 \
+sketchybar --bar position=top height=$BAR_HEIGHT color=0x00000000 \
+                 corner_radius=0 margin=$BAR_GAP y_offset=$BAR_GAP \
                  border_width=0 shadow=off \
                  padding_left=0 padding_right=0 \
-                 notch_width=$NOTCH_WIDTH
+                 notch_width=$NOTCH_GAP
 
 sketchybar --add event window_change
 
@@ -194,7 +203,7 @@ sketchybar --add item clock right \
 pill=(
   background.color=$ISLAND_BG
   background.corner_radius=12
-  background.height=38
+  background.height=$BAR_HEIGHT
   background.border_width=1
   background.border_color=$ISLAND_BORDER
   background.padding_left=0
