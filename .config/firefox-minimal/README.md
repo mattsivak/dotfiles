@@ -20,13 +20,50 @@ summoned by keyboard and disappears when you are done with it.
 - Square corners, zero animation, ayu dark, Hack Nerd Font Mono — matching the
   sketchybar/Ghostty/Neovim palette on this machine.
 
-## Install
+## Try it / Install
+
+Two separate things. **Trying** it runs a second Firefox with its own profile,
+beside your real one. **Installing** applies the chrome to your real profile.
+
+```sh
+./try.sh                 # open the scratch profile (keeps its extensions)
+./try.sh --fresh         # wipe and start clean (prompts if extensions exist)
+./try.sh --promote       # copy the scratch profile to a permanent one
+```
 
 ```sh
 ./install.sh --dry-run     # see exactly what it will touch
 ./install.sh               # back up, then install into default-release
 ./install.sh --uninstall   # restore the backup
 ```
+
+### Where the scratch profile lives — and why not /tmp
+
+`~/.local/share/firefox-minimal/try-profile`
+
+Not `/tmp`: macOS prunes it, so extensions and their configuration would
+disappear on reboot. If you set up extensions in the scratch profile, that
+work lives only there — this repo holds CSS and scripts, never profile data
+(it contains cookies, logins and session tokens).
+
+So back it up:
+
+```sh
+./backup.sh                      # timestamped snapshot
+./backup.sh --list
+./backup.sh --restore 20261007-182317
+./backup.sh --prune 5            # keep newest 5
+```
+
+Snapshots go to `~/.local/share/firefox-minimal/snapshots/` (~340 MB each with
+a few extensions installed). `--restore` parks the current profile rather than
+deleting it, and refuses to run while Firefox has the profile open.
+
+### Moving extensions to your real profile
+
+Extensions do **not** transfer by copying files between profiles — Firefox
+keys them to the profile that installed them. Install them normally in
+whichever profile you intend to keep, then sign in to each one again.
 
 It writes only `<profile>/chrome/` and `<profile>/user.js`, backing up any
 existing copies to `chrome.backup-<timestamp>` first. Quit Firefox before
