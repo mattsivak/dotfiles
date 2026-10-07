@@ -60,7 +60,7 @@ SWAP_RAW=$(sysctl -n vm.swapusage | sed -n 's/.*used = \([0-9.]*\)\([MG]\).*/\1 
 SWAP_NUM=$(echo "$SWAP_RAW" | awk '{print $1}')
 SWAP_UNIT=$(echo "$SWAP_RAW" | awk '{print $2}')
 if [ "$SWAP_UNIT" = "M" ]; then
-  SWAP_GB=$(echo "scale=1; $SWAP_NUM / 1024" | bc)
+  SWAP_GB=$(printf '%.1f' "$(echo "scale=3; $SWAP_NUM / 1024" | bc)")
 else
   SWAP_GB=$SWAP_NUM
 fi

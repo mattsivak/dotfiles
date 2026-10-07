@@ -125,11 +125,14 @@ sketchybar --add item chevron left \
 #
 #   clock volume          ambient, always there, nothing to do with the machine
 #   ip_address power      connectivity and energy -- environment, not workload
-#   swap memory gpu cpu   the workload, in escalating immediacy
+#   memory gpu cpu        the workload, in escalating immediacy
 #
 # cpu sits innermost because it changes fastest and is checked most often, so
 # it lands closest to the eye's resting point rather than at the screen edge.
-# swap sits beside memory because swap is a memory symptom, not its own topic.
+#
+# Swap is deliberately not here: it is a symptom of memory pressure rather than
+# its own topic, and it lives in the memory popup where the breakdown explains
+# it. Promoting it to the bar gave two memory numbers competing for attention.
 # In the same way as the left items we can add items to the right side.
 # Additional position (e.g. center) are available, see:
 # https://felixkratz.github.io/SketchyBar/config/items#adding-items-to-sketchybar
@@ -159,9 +162,6 @@ sketchybar --add item clock right \
                        popup.background.border_color=$POPUP_BORDER \
                        popup.align=right \
            --subscribe power power_source_change system_woke \
-           --add item swap right \
-           --set swap update_freq=15 drawing=off \
-                      script="$PLUGIN_DIR/swap.sh" \
            --add item memory right \
            --set memory update_freq=5 icon=󰍛 icon.color=$AYU_ENTITY \
                         script="$PLUGIN_DIR/memory.sh" \
@@ -330,7 +330,7 @@ LEFT_ITEMS+=(chevron front_app)
 NOTCH_LEFT_ITEMS=("${LEFT_ITEMS[@]}")
 [ -n "$NOTCH_DISPLAY" ] && NOTCH_LEFT_ITEMS+=(media)
 
-RIGHT_ITEMS=(clock volume ip_address power swap memory gpu cpu)
+RIGHT_ITEMS=(clock volume ip_address power memory gpu cpu)
 
 if [ -n "$NOTCH_DISPLAY" ]; then
   # Built-in display: two halves meeting at the notch.
