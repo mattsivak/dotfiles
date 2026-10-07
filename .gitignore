@@ -19,3 +19,7 @@
 # sketchybar builds its CPU helper on first run; the binary is a build
 # artefact of cpu_usage.swift, not source.
 .config/sketchybar/.cache/
+
+# Written by theme_toggle.sh at runtime; the current mode is machine state,
+# not configuration.
+.config/sketchybar/.theme_override.sh

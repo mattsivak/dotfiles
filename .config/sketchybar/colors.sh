@@ -75,3 +75,10 @@ export POPUP_BORDER=$AYU_PANEL_BORDER
 # is a separate variable rather than an edit to AYU_BG.
 export ISLAND_BG=0xff0c0e13
 export ISLAND_BORDER=$AYU_PANEL_BORDER
+
+# --- Theme override ---------------------------------------------------------
+# theme_toggle.sh writes this file to switch between ayu dark and OLED black.
+# Sourced last so it wins over the value above; absent means plain ayu.
+[ -n "$CONFIG_DIR" ] && [ -f "$CONFIG_DIR/.theme_override.sh" ] \
+  && . "$CONFIG_DIR/.theme_override.sh"
+

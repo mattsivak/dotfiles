@@ -63,6 +63,10 @@ meh - r   : brew services restart sketchybar
 
 hyper - w : betterdisplaycli toggle --hdr
 
+# Toggle the bar + terminal background between ayu dark and OLED black.
+# b for black.
+meh - b   : ~/.scripts/theme_toggle.sh
+
 # internal
 fn + ctrl - h : yabai -m window --swap west  || $(yabai -m window --display west; yabai -m display --focus west)
 fn + ctrl - j : yabai -m window --swap south || $(yabai -m window --display south; yabai -m display --focus south)
