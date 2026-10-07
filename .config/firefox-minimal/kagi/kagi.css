@@ -56,6 +56,15 @@
   --mz-size: 13px;
   --mz-gutter: 1.6ch;
 
+  /* Content column width.
+   *
+   * Kagi defaults to a 680px column (max-width:700px on <main>), which on a
+   * wide window leaves most of the screen empty — measured 700px of content
+   * in a 1850px window. A monospace list reads well much wider, so lift the
+   * cap and let it breathe, with a ceiling so lines never become unreadably
+   * long. Set --mz-width to 680px to restore Kagi's own width. */
+  --mz-width: 1100px;
+
   /* Kagi's own variables — set these and much of the page follows without
    * needing element rules. Names taken from Kagi's documented theme vars. */
   --background-color: var(--mz-bg);
@@ -83,6 +92,37 @@
   --m_sri_gap_color: transparent;
 
   color-scheme: dark;
+}
+
+/* --- content width ------------------------------------------------------ */
+
+/* Kagi sets these at :root; overriding them moves the whole grid, which is
+ * cleaner than fighting each element. */
+:root,
+.theme_dark,
+.theme_moon_dark,
+.theme_black {
+  --center_content_width: var(--mz-width);
+  --center_content_min_width: 0px;
+}
+
+main#main,
+.center-content-box,
+#_0_app_content,
+.app-content-box,
+#layout-v2,
+#page0,
+._0_main-search-results,
+.results-box {
+  max-width: var(--mz-width) !important;
+  width: 100% !important;
+}
+
+/* Keep the column off the window edge on narrow screens. */
+#_0_app_content,
+.app-content-box {
+  padding-inline: 1.5ch !important;
+  box-sizing: border-box !important;
 }
 
 /* --- global ------------------------------------------------------------- */
@@ -162,18 +202,11 @@ main {
   background: var(--mz-panel) !important;
 }
 
-/* The `:` prompt, matching the browser's dmenu bar. */
-.search-input-container::before,
-._0_search-input-container::before {
-  content: ":";
-  color: var(--mz-accent);
-  font-family: var(--mz-font);
-  font-weight: bold;
-  font-size: var(--mz-size);
-  align-self: center;
-  padding-inline: 0.9ch 0.2ch;
-  flex: 0 0 auto;
-}
+/* No `:` prompt here, deliberately. It shifted Kagi's input 17px right
+ * (measured x=70 stock -> x=87) and sat next to Kagi's own search glyph, so
+ * the box read as having two leading icons. The browser's address bar already
+ * carries that motif; repeating it inside the page is noise.
+ */
 
 input[type="text"],
 input[type="search"],
@@ -485,6 +518,12 @@ textarea,
  * boxing the "67 relevant results in 0.4s" line, which should read as a
  * comment, not a panel.
  */
+/* Stock Kagi gives these NO border and NO background (measured: bd=0px,
+ * bg=transparent). A full frame plus my own padding is what produced the
+ * boxed "Blast from the Past" with slack under the last row.
+ *
+ * So: no box. A left accent bar marks a block as set apart, matching the
+ * instant-answer treatment, and Kagi keeps its own padding. */
 .instant-answer,
 .ia-wrapper,
 .widgetContent,
@@ -494,12 +533,18 @@ textarea,
 .podcast_result,
 .newsResultItem,
 .videoResultItem {
-  background: var(--mz-panel) !important;
-  border: 1px solid var(--mz-border) !important;
+  background: transparent !important;
+  border: none !important;
+  border-left: 1px solid var(--mz-border) !important;
   border-radius: 0 !important;
   color: var(--mz-fg) !important;
   font-family: var(--mz-font) !important;
-  padding: 0.5em 1ch !important;
+  padding-left: var(--mz-gutter) !important;
+}
+
+.instant-answer,
+.ia-wrapper {
+  border-left-color: var(--mz-accent) !important;
 }
 
 /* Rows inside a framed container: never their own frame or background. */
@@ -511,8 +556,6 @@ textarea,
 .widgetContent .widgetItemTitle {
   background: transparent !important;
   border: none !important;
-  padding: 1px 0 !important;
-  margin: 0 !important;
   font-family: var(--mz-font) !important;
 }
 
@@ -532,12 +575,6 @@ textarea,
   font-size: 11.5px !important;
   padding: 0 !important;
   margin: 0 0 0.6em 0 !important;
-}
-
-.instant-answer,
-.ia-wrapper {
-  border-left: 2px solid var(--mz-accent) !important;
-  padding: 0.6em 1ch !important;
 }
 
 /* Sidebar filters. */
@@ -562,107 +599,78 @@ textarea,
  * Buttons, toggles, misc controls
  * ======================================================================== */
 
-/* A blanket `button { border: 1px }` put a box around every icon.
- * Measured: 68 icon-only buttons boxed, including the two controls on every
- * single result row. Borders belong on text controls only.
+/* CONTROLS
+ * ---------------------------------------------------------------------------
+ * Hard lesson, measured stock-vs-ours on the live page: do NOT impose size on
+ * Kagi's controls. Adding padding + min-height to `.filter-item` grew the
+ * pills from 199x32 to 240x36 and pushed the row to WRAP onto two lines, and
+ * bordering `.more_search_dropdown_box` turned a 24x30 icon into a 51x77
+ * empty box beside the kebab.
  *
- * Default: no border anywhere. */
+ * Rule for this whole section: recolour only. Kagi owns the geometry.
+ */
+
 button,
 .btn,
-.k_ui_button {
-  background: transparent !important;
-  color: var(--mz-dim) !important;
-  border: none !important;
-  border-radius: 0 !important;
-  font-family: var(--mz-font) !important;
-  font-size: 12px !important;
-}
-
-/* Text controls — the filter pills — opt back in.
- *
- * Deliberately NOT `.dd-toggle` (a hidden 16x4 checkbox that drives the
- * dropdown; bordering it drew a stray tick) and NOT a bare `.k_ui_dropdown`
- * (the per-result "+" control is one, which is the last boxed icon that
- * survived the first pass). Both measured on the live SERP.
- */
-.filter-item,
-.dropdown.filter-item,
-.more_search_dropdown_box,
-.landing-category-select {
-  border: 1px solid var(--mz-border) !important;
-  padding: 2px 1ch !important;
-  min-height: 24px !important;
-  display: flex !important;
-  align-items: center !important;
-}
-
-/* The checkbox that backs each dropdown is presentational only. */
+.k_ui_button,
 .dd-toggle,
-input.dd-toggle {
-  border: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  appearance: none !important;
-}
-
-/* Dropdowns attached to a result row are icon controls, not text pills. */
+.dd-toggle-label,
+.more_search_dropdown_box,
+.share-search-button,
+.copyToClip,
+.k_ui_dropdown,
 .__sri_more_menu,
-.__sri_more_menu_box .k_ui_dropdown,
-.search-result .k_ui_dropdown,
-._0_SRI .k_ui_dropdown,
-.k_ui_dropdown.app_nav_dropdown,
-#quickSettingsOpenBtn {
-  border: none !important;
-  background: transparent !important;
-  padding: 0 !important;
-}
-
-/* The dropdown's own popup list keeps its frame — it is a panel. */
-.k_ui_dropdown_data_list {
-  border: 1px solid var(--mz-border) !important;
-  background: var(--mz-panel) !important;
-}
-
-/* Icon-only buttons: no border, no padding box, just the glyph. `:has()` is
- * the precise test (an element whose content is an svg); the explicit ids and
- * classes cover the handful that wrap theirs in a span. */
-button:has(> svg),
-button:has(> img),
-button:not([class]),
+._0_rank-icons,
 #clear_searchBar,
 #searchFormSubmit,
 #quickSettingsOpenBtn,
 .btn-icon,
-.clear-search,
-._0_rank-icons,
-.__sri_more_menu_box button,
-.__sri_more_menu_box a,
-.__sri_more_menu .k_ui_dropdown_first_item {
+.clear-search {
+  background: transparent !important;
   border: none !important;
-  background: transparent !important;
-  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--mz-dim) !important;
+  font-family: var(--mz-font) !important;
 }
 
-/* Icon buttons signal hover by brightening, not by growing a box. */
-button:has(> svg):hover,
-._0_rank-icons:hover,
-.__sri_more_menu_box:hover {
+/* The filter pills DO get a frame — Kagi draws one too — but they keep their
+ * own padding and height so the row still fits on one line. */
+.filter-item,
+.dropdown.filter-item,
+.landing-category-select {
   background: transparent !important;
-  color: var(--mz-accent) !important;
-  opacity: 1 !important;
+  border: 1px solid var(--mz-border) !important;
+  border-radius: 0 !important;
+  color: var(--mz-dim) !important;
+  font-family: var(--mz-font) !important;
 }
 
-/* Text controls still get the reverse-video hover. */
-.dd-toggle:hover,
-.more_search_dropdown_box:hover,
-.filter-item:hover {
-  color: var(--mz-bg) !important;
-  background: var(--mz-accent) !important;
+.filter-item:hover,
+.landing-category-select:hover {
   border-color: var(--mz-accent) !important;
+  color: var(--mz-fg) !important;
+  background: transparent !important;
 }
 
-.k_ui_toggle_switch {
-  border-color: var(--mz-border) !important;
+/* Hover on an icon brightens the glyph; it never grows a box. */
+button:hover,
+.btn:hover,
+.k_ui_button:hover,
+.more_search_dropdown_box:hover,
+.share-search-button:hover,
+._0_rank-icons:hover,
+.__sri_more_menu:hover {
+  background: transparent !important;
+  border: none !important;
+  color: var(--mz-accent) !important;
+}
+
+/* A dropdown's popup list is a real panel, so it keeps a frame. */
+.k_ui_dropdown_data_list,
+.auto_suggestions {
+  background: var(--mz-panel) !important;
+  border: 1px solid var(--mz-border) !important;
 }
 
 a {
@@ -691,7 +699,7 @@ hr,
 .instant-tab-separator,
 .nav_separator {
   border-color: var(--mz-border) !important;
-  background: var(--mz-border) !important;
+  background: transparent !important;
 }
 
 /* ===========================================================================
@@ -721,6 +729,7 @@ hr,
   :root {
     --mz-size: 14px;     /* a 13px monospace is too tight on a phone */
     --mz-gutter: 1.1ch;
+    --mz-width: 100%;
   }
 
   .search-result,
