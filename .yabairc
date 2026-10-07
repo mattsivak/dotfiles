@@ -52,8 +52,13 @@ yabai -m rule --add app="^Digital Colou?r Meter$" sticky=on
 
 yabai -m config window_shadow off
 
-yabai -m signal --add event=window_created action="sketchybar -m --trigger window_change &> /dev/null"
-yabai -m signal --add event=window_destroyed action="sketchybar -m --trigger window_change &> /dev/null"
+# Space indicators show a glyph per app, so the bar has to refresh whenever the
+# set of windows on a space changes -- not just on create/destroy, but also when
+# a window moves between spaces or is minimised out of view.
+for ev in window_created window_destroyed window_moved \
+          window_minimized window_deminimized; do
+  yabai -m signal --add event="$ev" action="sketchybar -m --trigger window_change &> /dev/null"
+done
 
 # The bar's pill shape depends on which display is the built-in one and how
 # many displays exist, and that is decided when sketchybarrc runs. Plugging or

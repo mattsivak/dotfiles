@@ -94,11 +94,15 @@ do
     background.color=$SPACE_ACTIVE_BG
     background.corner_radius=8
     background.height=24
+    label.color=$SPACE_IDLE_FG
+    label.padding_left=0
+    label.padding_right=7
     label.drawing=off
     script="$PLUGIN_DIR/space.sh"
     click_script="yabai -m space --focus $sid"
   )
-  sketchybar --add space space."$sid" left --set space."$sid" "${space[@]}"
+  sketchybar --add space space."$sid" left --set space."$sid" "${space[@]}" \
+             --subscribe space."$sid" window_change
 done
 
 # The leading item carries the pill's left inset. padding_left on an item is
@@ -110,10 +114,12 @@ sketchybar --set space."${SPACE_IDS[0]}" padding_left=$PILL_INSET
 # We add some regular items to the left side of the bar, where
 # only the properties deviating from the current defaults need to be set
 
-sketchybar --add item chevron left \
-           --set chevron icon= icon.color=$AYU_ACCENT label.drawing=off \
-           --add item front_app left \
+# front_app carries its own icon from sketchybar-app-font, set by the script.
+# The old `chevron` item that used to sit here was removed: its icon= was empty,
+# so it rendered 9px of nothing between the spaces and the app name.
+sketchybar --add item front_app left \
            --set front_app icon.drawing=off label.color=$AYU_ACCENT \
+                           padding_left=10 \
                            script="$PLUGIN_DIR/front_app.sh" \
            --subscribe front_app front_app_switched
 
@@ -322,7 +328,7 @@ LEFT_ITEMS=()
 for sid in "${SPACE_IDS[@]}"; do
   LEFT_ITEMS+=("space.$sid")
 done
-LEFT_ITEMS+=(chevron front_app)
+LEFT_ITEMS+=(front_app)
 
 # media sits in the left pill on the notched display, between front_app and
 # the notch edge. It is not in LEFT_ITEMS because the full-width pill on
