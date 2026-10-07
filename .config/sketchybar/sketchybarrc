@@ -8,6 +8,10 @@ PLUGIN_DIR="$CONFIG_DIR/plugins"
 # ayu dark palette; exported so plugin scripts inherit the same colors.
 . "$CONFIG_DIR/colors.sh"
 
+# NOTCH_DISPLAY (sketchybar display index of the built-in screen, empty if
+# none) and NOTCH_WIDTH (real notch width in points). Both detected live.
+. "$CONFIG_DIR/notch.sh"
+
 ##### Bar Appearance #####
 # Configuring the general appearance of the bar.
 # These are only some of the options available. For all options see:
@@ -15,18 +19,20 @@ PLUGIN_DIR="$CONFIG_DIR/plugins"
 # If you are looking for other colors, see the color picker:
 # https://felixkratz.github.io/SketchyBar/config/tricks#color-picker
 
-# Split bar: the bar surface itself is transparent and chromeless. What you
-# actually see are two bracket "islands" (left_island / right_island, defined
-# at the bottom of this file) that wrap the items, leaving the middle of the
-# screen empty. The bar still occupies the full strip for layout purposes --
-# only its background is invisible.
+# The bar surface itself is transparent and chromeless. What you see are the
+# brackets defined at the bottom of this file, which draw the pills.
+#
+# notch_width is the measured width of this machine's notch rather than
+# sketchybar's generic 200pt default, so the two halves on the built-in
+# display stop exactly at the notch edges.
 #
 # yabai's external_bar must reserve height + y_offset (38 + 8 = 46).
 # margin insets horizontally only; it adds no vertical space.
 sketchybar --bar position=top height=38 color=0x00000000 \
                  corner_radius=0 margin=8 y_offset=8 \
                  border_width=0 shadow=off \
-                 padding_left=0 padding_right=0
+                 padding_left=0 padding_right=0 \
+                 notch_width=$NOTCH_WIDTH
 
 sketchybar --add event window_change
 
@@ -158,15 +164,34 @@ sketchybar --add item clock right \
 "$PLUGIN_DIR/power_popup_factory.sh" power_ane
 "$PLUGIN_DIR/power_popup_factory.sh" power_display
 
-##### Islands #####
-# A bracket draws a single background behind a group of items. With the bar
-# itself transparent, these two brackets ARE the visible bar: one pill hugging
-# the left items, one hugging the right, with bare desktop between them.
+##### Pills #####
+# The bar is transparent; these brackets are the visible surface.
 #
-# The left bracket must list every space indicator by name, so it is built
-# from the same SPACE_IDS array used above rather than a fixed list.
+# Two different shapes, depending on the screen:
+#
+#   built-in display   split into two half-width pills that butt up against
+#                      the notch, so the notch becomes the gap between them
+#   every other display  one pill spanning the full width
+#
+# Both shapes wrap the same items. What differs is only how far each pill
+# extends, and that is controlled by invisible anchor items:
+#
+#   notch_left / notch_right  zero-width items pinned to the notch edges by
+#                             sketchybar's `q` and `e` positions
+#   edge_right                a zero-width item pinned to the right edge
+#
+# A bracket spans from its leftmost member to its rightmost, so including an
+# anchor stretches the pill out to that anchor's position even though the
+# anchor draws nothing. Without them a bracket only hugs its items and the
+# pills would be ragged, sized by whatever text the clock happens to show.
+#
+# `q` and `e` are notch-relative positions that only mean anything on the
+# built-in display; on an external screen sketchybar collapses both to the
+# centre. That is exactly why the full-width bracket is a separate item
+# associated to the other displays, rather than one clever bracket trying to
+# be both shapes at once.
 
-island=(
+pill=(
   background.color=$ISLAND_BG
   background.corner_radius=12
   background.height=38
@@ -176,20 +201,60 @@ island=(
   background.padding_right=0
 )
 
-LEFT_MEMBERS=()
+# Invisible anchors. width=0 keeps them from consuming layout space, and
+# every drawing component is off, but they still report a position that a
+# bracket will extend to.
+anchor=(
+  width=0
+  icon.drawing=off
+  label.drawing=off
+  background.drawing=off
+)
+
+sketchybar --add item notch_left q    --set notch_left "${anchor[@]}" \
+           --add item notch_right e   --set notch_right "${anchor[@]}" \
+           --add item edge_right right --set edge_right "${anchor[@]}"
+
+# Members, in bar order. The space indicators are expanded from the same
+# yabai-derived SPACE_IDS used above, so the pills keep hugging the right
+# number of indicators when a space or a display comes and goes.
+LEFT_ITEMS=()
 for sid in "${SPACE_IDS[@]}"; do
-  LEFT_MEMBERS+=("space.$sid")
+  LEFT_ITEMS+=("space.$sid")
 done
-LEFT_MEMBERS+=(chevron front_app)
+LEFT_ITEMS+=(chevron front_app)
 
-sketchybar --add bracket left_island "${LEFT_MEMBERS[@]}" \
-           --set left_island "${island[@]}"
+RIGHT_ITEMS=(clock volume battery memory
+             power_system power_adapter power_charging
+             power_cpu power_gpu power_ane power_display
+             power_trigger ip_address)
 
-sketchybar --add bracket right_island clock volume battery memory \
-                        power_system power_adapter power_charging \
-                        power_cpu power_gpu power_ane power_display \
-                        power_trigger ip_address \
-           --set right_island "${island[@]}"
+if [ -n "$NOTCH_DISPLAY" ]; then
+  # Built-in display: two halves meeting at the notch.
+  #
+  # The left pill runs from the first space indicator to the notch's left
+  # edge; the right pill from the notch's right edge out to the screen edge.
+  sketchybar --add bracket notch_pill_left "${LEFT_ITEMS[@]}" notch_left \
+             --set notch_pill_left "${pill[@]}" display="$NOTCH_DISPLAY" \
+             --add bracket notch_pill_right notch_right "${RIGHT_ITEMS[@]}" edge_right \
+             --set notch_pill_right "${pill[@]}" display="$NOTCH_DISPLAY"
+
+  # Every other display gets the single full-width pill. Listing the
+  # displays explicitly (rather than `all`) keeps it off the built-in one,
+  # where it would draw straight across the notch and undo the split.
+  OTHER_DISPLAYS=$(yabai -m query --displays 2>/dev/null \
+    | jq -r --arg n "$NOTCH_DISPLAY" \
+        '[.[] | select(.index != ($n | tonumber)) | .index] | join(",")' 2>/dev/null)
+else
+  # Lid closed or a desktop Mac: no notch, so no split anywhere.
+  OTHER_DISPLAYS="all"
+fi
+
+if [ -n "$OTHER_DISPLAYS" ]; then
+  sketchybar --add bracket full_pill "${LEFT_ITEMS[@]}" \
+                          "${RIGHT_ITEMS[@]}" edge_right \
+             --set full_pill "${pill[@]}" display="$OTHER_DISPLAYS"
+fi
 
 ##### Force all scripts to run the first time (never do this in a script) #####
 sketchybar --update
