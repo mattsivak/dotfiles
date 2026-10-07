@@ -1,0 +1,68 @@
+/* ===========================================================================
+ * minimal firefox — content-side styling
+ * Applies to about: pages and the new tab, so opening a tab lands on a dark
+ * square surface instead of a white flash. Does NOT restyle normal websites.
+ * ======================================================================== */
+
+@-moz-document url-prefix("about:"), url("about:blank"), url("about:newtab"), url("about:home") {
+  :root {
+    --mz-bg: #0b0e14;
+    --mz-fg: #bfbdb6;
+    --mz-dim: #565b66;
+    --mz-border: #1e222a;
+    --mz-accent: #e6b450;
+
+    --in-content-page-background: var(--mz-bg) !important;
+    --in-content-page-color: var(--mz-fg) !important;
+    --in-content-box-background: #0f131a !important;
+    --in-content-border-color: var(--mz-border) !important;
+    --in-content-primary-button-background: var(--mz-accent) !important;
+    --in-content-primary-button-text-color: var(--mz-bg) !important;
+    --in-content-accent-color: var(--mz-accent) !important;
+    --link-color: #59c2ff !important;
+    --border-radius-small: 0 !important;
+    --border-radius-medium: 0 !important;
+    --border-radius-large: 0 !important;
+    --button-border-radius: 0 !important;
+    color-scheme: dark !important;
+  }
+
+  html,
+  body {
+    background: var(--mz-bg) !important;
+    color: var(--mz-fg) !important;
+    font-family: "Hack Nerd Font Mono", Menlo, monospace !important;
+  }
+
+  button,
+  select,
+  input,
+  .button {
+    border-radius: 0 !important;
+  }
+}
+
+/* A blank new tab, with nothing to look at. */
+@-moz-document url("about:newtab"), url("about:home") {
+  body {
+    background: #0b0e14 !important;
+  }
+
+  /* Hide the activity-stream furniture if it is ever re-enabled. */
+  .personalize-button,
+  .search-wrapper,
+  .top-sites,
+  .ds-outer-wrapper-breakpoint-override,
+  [data-section-id],
+  .customize-menu {
+    display: none !important;
+  }
+}
+
+/* Square, dark scrollbars on every page. */
+@-moz-document url-prefix("about:") {
+  * {
+    scrollbar-color: #1e222a transparent !important;
+    scrollbar-width: thin !important;
+  }
+}

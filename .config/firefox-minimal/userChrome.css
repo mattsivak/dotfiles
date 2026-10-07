@@ -1,0 +1,1312 @@
+/* ===========================================================================
+ * minimal firefox — terminal / tiling-WM chrome
+ * ---------------------------------------------------------------------------
+ * Palette: ayu dark, values taken verbatim from the installed
+ *   ~/.local/share/nvim/lazy/neovim-ayu/lua/ayu/colors.lua (mirage = false),
+ *   so the browser matches Neovim and sketchybar exactly.
+ * Font: Hack Nerd Font Mono (already installed, same face as sketchybar).
+ *
+ * Requires: toolkit.legacyUserProfileCustomizations.stylesheets = true
+ *           widget.macos.native-context-menus = false   (to style menus)
+ *
+ * Layout, "strip" mode (default):
+ *   ┌──────────────────────────────────────────┐
+ *   │ 1 github.com  2 lobste.rs  3 mail        │  22px tmux-style tab line
+ *   ├──────────────────────────────────────────┤
+ *   │                 content                  │
+ *   └──────────────────────────────────────────┘
+ *   No titlebar, no nav bar, no buttons, no bookmarks bar, no sidebar header.
+ *   Cmd+L / Ctrl+L summons a centred dmenu-style prompt over the page.
+ * ======================================================================== */
+
+/* NO @namespace rule here, deliberately.
+ *
+ * The usual `@namespace url(...there.is.only.xul)` boilerplate is actively
+ * harmful in modern Firefox. A default namespace applies to the universal
+ * selector, which means a compound selector with no type selector — `.tab-content`,
+ * `:root` — is read as `xul|*.tab-content`. But Firefox's chrome document is
+ * rooted in an HTML <html id="main-window">, and large parts of the UI
+ * (every urlbar result row, the urlbar input) are HTML elements too. With the
+ * namespace declared, `:root` matches nothing, every custom property below is
+ * undefined, and every `var()` that uses them silently falls back to Firefox's
+ * own theme. Verified: with the namespace present,
+ * getComputedStyle(document.documentElement).getPropertyValue('--mz-bg')
+ * returns "".
+ *
+ * Omitting it is strictly more permissive: an unprefixed type selector matches
+ * any namespace, so `menuitem`, `toolbar` and `tab` still resolve.
+ */
+
+:root,
+#main-window {
+  /* --- knobs ------------------------------------------------------------ */
+
+  /* Tab strip visibility. `flex` = tmux-style strip (default).
+   * `none` = no chrome at all; switch tabs with Cmd+1..9 / Ctrl+Tab. */
+  --mz-tabs-display: flex;
+
+  /* Extensions button at the right end of the strip, like a status-bar item.
+   * `none` hides it — then reach extensions by keyboard shortcut only
+   * (about:addons -> gear -> Manage Extension Shortcuts). */
+  --mz-extensions-display: flex;
+
+  /* Window control buttons (macOS traffic lights). `none` suits a tiling WM
+   * (yabai) — the window is keyboard-managed. Set to `flex` to get them back
+   * if you ever need to drag or close with the mouse.
+   *
+   * NOT `-moz-box`: that display value was REMOVED from Firefox. Verified with
+   * CSS.supports('display', '-moz-box') === false on 157 — which makes the
+   * whole declaration invalid, so it is dropped and the element stays hidden,
+   * with no error anywhere. Every pre-2024 userChrome recipe still says it. */
+  --mz-traffic-lights: none;
+
+  --mz-strip-height: 22px;
+  --mz-font: "Hack Nerd Font Mono", "SF Mono", Menlo, monospace;
+  --mz-font-size: 11.5px;
+
+  /* --- ayu dark --------------------------------------------------------- */
+  --mz-bg: #0b0e14;
+  --mz-line: #11151c;
+  --mz-panel: #0f131a;
+  --mz-border: #1e222a;
+  --mz-fg: #bfbdb6;
+  --mz-dim: #565b66;
+  --mz-comment: #636a72;
+  --mz-accent: #e6b450; /* gold — focus / active */
+  --mz-blue: #59c2ff;
+  --mz-green: #aad94c;
+  --mz-red: #d95757;
+
+  /* --- override Firefox's own theme variables --------------------------- */
+  --toolbar-bgcolor: var(--mz-bg) !important;
+  --toolbar-color: var(--mz-fg) !important;
+  --toolbarbutton-icon-fill: var(--mz-dim) !important;
+  --tabpanel-background-color: var(--mz-bg) !important;
+  --lwt-accent-color: var(--mz-bg) !important;
+  --arrowpanel-background: var(--mz-panel) !important;
+  --arrowpanel-color: var(--mz-fg) !important;
+  --arrowpanel-border-color: var(--mz-border) !important;
+  --panel-background: var(--mz-panel) !important;
+  --panel-color: var(--mz-fg) !important;
+  --panel-border-color: var(--mz-border) !important;
+  --panel-border-radius: 0 !important;
+  --panel-item-border-radius: 0 !important;
+  --toolbarbutton-border-radius: 0 !important;
+  --urlbar-min-height: 0 !important;
+  --urlbarView-item-border-radius: 0 !important;
+  --tab-border-radius: 0 !important;
+  --tab-min-height: var(--mz-strip-height) !important;
+  --tab-block-margin: 0 !important;
+  --tab-inline-margin: 0 !important;
+  --focus-outline-color: var(--mz-accent) !important;
+  --box-text-color: var(--mz-fg) !important;
+  --in-content-page-background: var(--mz-bg) !important;
+  --chrome-content-separator-color: var(--mz-border) !important;
+}
+
+/* Kill every animation and transition in the chrome. A WM does not fade. */
+*,
+*::before,
+*::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}
+
+/* Mono everywhere, square everything. */
+#navigator-toolbox,
+#navigator-toolbox *,
+menupopup,
+menupopup *,
+panel,
+panel *,
+findbar,
+findbar *,
+#statuspanel-label {
+  font-family: var(--mz-font) !important;
+  font-size: var(--mz-font-size) !important;
+  border-radius: 0 !important;
+}
+
+/* ===========================================================================
+ * 1. Toolbox: one flat surface, single hairline under it
+ * ======================================================================== */
+
+/* The plum ground is painted on the chrome document's own <body>, not on any
+ * toolbar — it carries both a background-color and a linear-gradient (the
+ * Firefox "toolbar accent" wash). Clearing the toolbars alone leaves it showing
+ * through, since every toolbar above it computes to transparent. Measured on
+ * 157: body background-color rgb(37,36,40) plus linear-gradient(96deg, ...).
+ */
+#main-window,
+#main-window > body,
+#browser-bottombox {
+  background-color: var(--mz-bg) !important;
+  background-image: none !important;
+}
+
+#navigator-toolbox {
+  background: var(--mz-bg) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--mz-border) !important;
+  box-shadow: none !important;
+
+  /* The toolbox must paint ABOVE the content <browser>, or the summoned urlbar
+   * overlay disappears behind the page.
+   *
+   * `position: relative; z-index: 10` is NOT enough and this is the trap:
+   * the remote content browser is composited in its own layer, so an ordinary
+   * stacking context on an earlier sibling does not get on top of it.
+   * Verified by hit-testing the centre of the input row with
+   * document.elementFromPoint() while varying one declaration at a time:
+   *
+   *   baseline                  -> browser      (overlay invisible)
+   *   #browser     z-index: 0   -> browser
+   *   #tabbrowser-tabpanels z:-1-> browser
+   *   isolation:isolate + max z -> input#urlbar-input   <- the one that works
+   *   in-flow (position:static) -> browser
+   *
+   * `isolation: isolate` is the part that matters; the z-index alone was
+   * already present and insufficient.
+   */
+  isolation: isolate !important;
+  position: relative !important;
+  z-index: 2147483647 !important;
+}
+
+#navigator-toolbox-background {
+  background: var(--mz-bg) !important;
+}
+
+/* No drop shadow / separator under the toolbox from the browser container. */
+#browser,
+#appcontent,
+#tabbrowser-tabbox,
+#tabbrowser-tabpanels {
+  background: var(--mz-bg) !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* ===========================================================================
+ * 2. Titlebar — gone
+ * ======================================================================== */
+
+.titlebar-spacer,
+.titlebar-placeholder,
+#titlebar-buttonbox-container,
+#private-browsing-indicator-with-label,
+.accessibility-indicator,
+#firefox-view-button,
+#alltabs-button,
+#tabs-newtab-button,
+#new-tab-button {
+  display: none !important;
+}
+
+.titlebar-buttonbox-container {
+  display: var(--mz-traffic-lights) !important;
+}
+
+#titlebar {
+  appearance: none !important;
+  background: var(--mz-bg) !important;
+}
+
+/* ===========================================================================
+ * 3. Tab strip — tmux window list
+ *    `1 github.com  2 lobste.rs  3 mail`
+ *    Active tab is reversed (gold ground), inactive is dim text.
+ * ======================================================================== */
+
+#TabsToolbar {
+  display: var(--mz-tabs-display) !important;
+  min-height: var(--mz-strip-height) !important;
+  height: var(--mz-strip-height) !important;
+  max-height: var(--mz-strip-height) !important;
+  background: var(--mz-bg) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  appearance: none !important;
+}
+
+#TabsToolbar > .toolbar-items,
+#tabbrowser-tabs {
+  min-height: var(--mz-strip-height) !important;
+  height: var(--mz-strip-height) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  counter-reset: mztab;
+}
+
+/* The scrollbox arrows and the overflow fade belong to a GUI, not a strip. */
+#tabbrowser-arrowscrollbox::part(scrollbutton-up),
+#tabbrowser-arrowscrollbox::part(scrollbutton-down),
+#tabbrowser-arrowscrollbox::part(overflow-start-indicator),
+#tabbrowser-arrowscrollbox::part(overflow-end-indicator) {
+  display: none !important;
+}
+
+.tabbrowser-tab {
+  counter-increment: mztab;
+  min-height: var(--mz-strip-height) !important;
+  height: var(--mz-strip-height) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  opacity: 1 !important;
+
+  /* Tabs default to `flex: 100 100 0%`, so two tabs each take half the window
+   * — measured 166px for a 7-character title. A window list sizes to its
+   * labels, so switch to content sizing and cap the long ones.
+   */
+  flex: 0 0 auto !important;
+  min-width: 0 !important;
+  width: max-content !important;
+  max-width: 24ch !important;
+}
+
+/* No pill, no hover card, no shadow — the ground is painted by .tab-content. */
+.tab-background {
+  display: none !important;
+}
+
+.tab-content {
+  padding: 0 0.75ch !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--mz-dim) !important;
+  justify-content: flex-start !important;
+}
+
+/* tmux-style index prefix. */
+.tab-content::before {
+  content: counter(mztab);
+  color: var(--mz-border);
+  margin-inline-end: 0.6ch;
+  font-variant-numeric: tabular-nums;
+}
+
+.tab-label-container {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.tab-label {
+  margin: 0 !important;
+  color: inherit !important;
+  font-weight: normal !important;
+}
+
+/* Favicons, close buttons, throbbers, audio badges, group affordances: out. */
+.tab-icon-stack,
+.tab-icon-image,
+.tab-icon-overlay,
+.tab-throbber,
+.tab-close-button,
+.tab-sharing-icon-overlay,
+.tab-secondary-label,
+.tab-group-label-container,
+.tabbrowser-tab::after,
+.tabbrowser-tab::before {
+  display: none !important;
+}
+
+/* A loading tab says so the way a prompt does: an asterisk. */
+.tabbrowser-tab[busy] .tab-content::after,
+.tabbrowser-tab[progress] .tab-content::after {
+  content: "*";
+  color: var(--mz-accent);
+  margin-inline-start: 0.5ch;
+}
+
+/* Hover: brighten the text only. */
+.tabbrowser-tab:hover .tab-content {
+  color: var(--mz-fg) !important;
+}
+
+/* Selected tab: reverse video, like tmux's current window. */
+.tabbrowser-tab[selected] .tab-content,
+.tabbrowser-tab[visuallyselected] .tab-content {
+  background: var(--mz-accent) !important;
+  color: var(--mz-bg) !important;
+  font-weight: bold !important;
+}
+
+.tabbrowser-tab[selected] .tab-content::before,
+.tabbrowser-tab[visuallyselected] .tab-content::before {
+  color: color-mix(in srgb, var(--mz-bg) 55%, var(--mz-accent)) !important;
+}
+
+/* Unread / pending tabs: dimmer still. */
+.tabbrowser-tab[pending] .tab-content {
+  color: var(--mz-border) !important;
+}
+
+/* Muted tab marker. */
+.tabbrowser-tab[muted] .tab-content::after {
+  content: "m";
+  color: var(--mz-red);
+  margin-inline-start: 0.5ch;
+}
+
+/* ===========================================================================
+ * 3b. Extensions — one status-bar item at the right of the strip
+ *
+ * The unified-extensions button is deliberately KEPT. It is the anchor every
+ * extension popup hangs off: with it hidden, uBlock's panel still opens but
+ * lands off-screen above the window (measured at y = -56 and y = -297 in a
+ * 1374px-tall window), so extensions become unreachable by mouse entirely.
+ *
+ * Placed like a WM status item: right-aligned, same height as the strip,
+ * no label, no chrome of its own.
+ * ======================================================================== */
+
+/* Extensions pinned to the toolbar stay INLINE in #nav-bar-customization-target
+ * — Firefox only reparents the *unpinned* ones into the panel. Since our
+ * nav-bar is the invisible dmenu overlay, a pinned icon rendered at 32x2 and
+ * was unclickable. Fix: turn the customization target itself into a fixed,
+ * right-aligned row in the tab strip, and take the urlbar out of its flow.
+ */
+#nav-bar-customization-target {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  left: auto !important;
+  width: auto !important;
+  height: var(--mz-strip-height) !important;
+  min-height: var(--mz-strip-height) !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  z-index: 2147483647 !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* The address bar must stay focusable (Cmd+L) while contributing no layout to
+ * that row. `position: absolute` pulls it out of flow; `display: none` would
+ * make it unfocusable and break Cmd+L entirely. */
+#urlbar-container {
+  position: absolute !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Each PINNED extension: a square status-bar cell matching the strip.
+ *
+ * Scoped to #nav-bar-customization-target on purpose. The same
+ * `.unified-extensions-item` class is used for rows inside the extensions
+ * PANEL, where a 22x22 square collapses the row and hides the extension's
+ * name — measured: Bitwarden listed as a 22x22 cell with its label clipped to
+ * invisible. Toolbar cells are square; panel rows are full-width list items. */
+#nav-bar-customization-target > toolbaritem.unified-extensions-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: var(--mz-strip-height) !important;
+  min-height: var(--mz-strip-height) !important;
+  width: var(--mz-strip-height) !important;
+  min-width: var(--mz-strip-height) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  opacity: 1 !important;
+}
+
+#nav-bar-customization-target .unified-extensions-item-action-button,
+#nav-bar-customization-target .webextension-browser-action {
+  width: var(--mz-strip-height) !important;
+  height: var(--mz-strip-height) !important;
+  min-width: var(--mz-strip-height) !important;
+  min-height: var(--mz-strip-height) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+/* The per-item overflow/menu chevron doubles every icon's width. */
+#nav-bar-customization-target .unified-extensions-item-menu-button {
+  display: none !important;
+}
+
+#unified-extensions-button {
+  display: var(--mz-extensions-display) !important;
+
+  /* In-flow at the end of the fixed row above, so pinned extension icons sit
+   * to its left instead of underneath it. */
+  position: relative !important;
+  order: 99 !important;
+  flex: 0 0 auto !important;
+
+  width: var(--mz-strip-height) !important;
+  height: var(--mz-strip-height) !important;
+  min-width: var(--mz-strip-height) !important;
+  min-height: var(--mz-strip-height) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+
+/* Extension icons are the extension's own artwork (uBlock ships a dark shield
+ * that is nearly invisible on #0b0e14), so they cannot simply be tinted —
+ * `-moz-context-properties` only affects icons that opt in. Raise them off the
+ * background instead: full opacity, and a subtle cell so the glyph has an edge
+ * to sit against. Measured correct geometry but zero visible contrast before
+ * this. */
+#nav-bar-customization-target .unified-extensions-item .toolbarbutton-icon,
+#nav-bar-customization-target .unified-extensions-item image {
+  width: 14px !important;
+  height: 14px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  opacity: 0.9;
+}
+
+#nav-bar-customization-target .unified-extensions-item:hover .toolbarbutton-icon,
+#nav-bar-customization-target .unified-extensions-item:hover image {
+  opacity: 1;
+}
+
+#nav-bar-customization-target .unified-extensions-item:hover,
+#nav-bar-customization-target .unified-extensions-item-action-button:hover {
+  background: var(--mz-line) !important;
+}
+
+#unified-extensions-button .toolbarbutton-icon {
+  width: 13px !important;
+  height: 13px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  -moz-context-properties: fill, fill-opacity;
+  fill: var(--mz-dim) !important;
+}
+
+#unified-extensions-button:hover .toolbarbutton-icon,
+#unified-extensions-button[open] .toolbarbutton-icon {
+  fill: var(--mz-accent) !important;
+}
+
+#unified-extensions-button:hover,
+#unified-extensions-button[open] {
+  background: transparent !important;
+}
+
+/* Never show a text label next to the icon in the strip. */
+#unified-extensions-button .toolbarbutton-text {
+  display: none !important;
+}
+
+/* Badges ARE kept — a badge is live information (uBlock's block count,
+ * a pending-items number), which is exactly what a status bar is for.
+ * Restyled from a rounded coloured pill into a small square counter that
+ * fits a 22px strip instead of overflowing it. */
+#nav-bar-customization-target .unified-extensions-item .toolbarbutton-badge,
+#unified-extensions-button .toolbarbutton-badge {
+  display: block !important;
+  min-width: 0 !important;
+  height: auto !important;
+  padding: 0 1px !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--mz-accent) !important;
+  font-family: var(--mz-font) !important;
+  font-size: 8px !important;
+  font-weight: bold !important;
+  line-height: 1 !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  /* bottom-right of the cell, like a WM's unread count */
+  align-self: end !important;
+  justify-self: end !important;
+}
+
+/* Reserve the button's width at the end of the tab strip so a long tab title
+ * cannot slide underneath it. */
+#tabbrowser-tabs {
+  padding-inline-end: var(--mz-strip-height) !important;
+}
+
+/* --- the extensions panel itself --------------------------------------- */
+
+#unified-extensions-panel,
+#unified-extensions-view {
+  --panel-background: var(--mz-panel) !important;
+  --panel-border-color: var(--mz-border) !important;
+  --panel-border-radius: 0 !important;
+  background: var(--mz-panel) !important;
+  color: var(--mz-fg) !important;
+}
+
+#unified-extensions-panel .panel-header,
+#unified-extensions-panel .panel-subview-header,
+#unified-extensions-panel toolbarseparator,
+#unified-extensions-panel #unified-extensions-manage-extensions {
+  border-color: var(--mz-border) !important;
+}
+
+.unified-extensions-item {
+  border-radius: 0 !important;
+  padding: 1px 0 !important;
+}
+
+.unified-extensions-item:hover,
+.unified-extensions-item-action-button:hover {
+  background: var(--mz-accent) !important;
+  color: var(--mz-bg) !important;
+}
+
+/* The per-extension description line is a second row of prose per item;
+ * the name alone identifies it. */
+.unified-extensions-item-message-deck,
+.unified-extensions-item-message {
+  display: none !important;
+}
+
+.unified-extensions-item-name {
+  color: inherit !important;
+  font-family: var(--mz-font) !important;
+}
+
+/* --- panel rows are LIST items, not strip cells ------------------------- */
+
+/* Explicitly undo any square-cell sizing for rows inside the panel, so an
+ * unpinned extension (Bitwarden is unpinned by default) shows its name. */
+#unified-extensions-panel .unified-extensions-item,
+#unified-extensions-area .unified-extensions-item {
+  display: flex !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 24px !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  padding: 1px 2px !important;
+}
+
+#unified-extensions-panel .unified-extensions-item-name,
+#unified-extensions-area .unified-extensions-item-name {
+  display: inline-block !important;
+  width: auto !important;
+  color: inherit !important;
+  font-family: var(--mz-font) !important;
+  font-size: var(--mz-font-size) !important;
+}
+
+#unified-extensions-panel .unified-extensions-item .toolbarbutton-icon,
+#unified-extensions-panel .unified-extensions-item image.toolbarbutton-icon {
+  width: 14px !important;
+  height: 14px !important;
+  opacity: 0.9;
+}
+
+#unified-extensions-panel .unified-extensions-item-action-button {
+  display: flex !important;
+  width: auto !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  justify-content: flex-start !important;
+}
+
+/* An extension's own popup is a web page it controls — do not restyle its
+ * insides, only the frame Firefox draws around it. */
+.webextension-popup-browser {
+  background: var(--mz-panel) !important;
+}
+
+/* ===========================================================================
+ * 4. Nav bar — invisible but still focusable, becomes a dmenu on Cmd+L
+ *
+ * `opacity: 0` (not display:none / visibility:hidden) is what keeps the urlbar
+ * reachable by keyboard while taking zero space on screen.
+ *
+ * SELECTOR NOTE (Firefox 136+): the address bar was rebuilt as a `moz-urlbar`
+ * custom element and several long-standing IDs became classes. Verified
+ * against the live DOM on 157:
+ *     #urlbar-background      ->  .urlbar-background
+ *     #urlbar-input-container ->  .urlbar-input-container
+ *     #identity-box           ->  #trust-icon-container
+ *   new: .searchmode-switcher, #remote-control-box, #urlbar-scheme
+ * Recipes written for older Firefox silently no-op on these.
+ * ======================================================================== */
+
+/* The hidden state is built WITHOUT `opacity: 0` on #nav-bar.
+ *
+ * Opacity is a group operation: it composites the entire subtree as one layer,
+ * so a descendant cannot opt back in — not with `opacity: 1`, not with
+ * `position: fixed`, not with any z-index. With `opacity: 0` here, the pinned
+ * extension icons measured a correct 22x22 at 1221,0 and painted nothing at
+ * all. Proved by sampling the rendered PNG: that region was a perfectly flat
+ * #0B0E14, luminance min == mean == max == 0.0541, against 0.05–0.72 across
+ * the active tab.
+ *
+ * So the toolbar stays fully opaque and merely collapses to zero height; the
+ * invisibility is applied to #urlbar-container alone, which has no children
+ * that need to paint while hidden.
+ */
+#nav-bar {
+  position: fixed !important;
+  top: 0 !important;
+  width: 100vw !important;
+  z-index: 10 !important;
+
+  min-height: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+
+  opacity: 1;
+  pointer-events: none;
+  /* `visible`, not `hidden`: the extension row is a fixed-position child that
+   * must escape this zero-height box to reach the tab strip. */
+  overflow: visible;
+}
+
+/* Pointer events are re-enabled only on the parts meant to be clicked, since
+ * the toolbar itself now spans the window at zero height. */
+#nav-bar-customization-target,
+#unified-extensions-button,
+.unified-extensions-item {
+  pointer-events: auto !important;
+}
+
+/* Everything in the nav bar except the address field itself.
+ *
+ * The two `:not()`s are load-bearing, both discovered by measurement:
+ *
+ *  - The extensions button is a direct child of this container, so the
+ *    catch-all hides it and outranks the later rule that positions it
+ *    (`#id > toolbarbutton` beats a bare `#id` on specificity, and both are
+ *    !important). Without it: display:none, 0x0, whatever section 3b says.
+ *
+ *  - Each extension's own widget is a `toolbaritem.unified-extensions-item`
+ *    parked in this same container; Firefox only *reparents* it into the
+ *    panel while the panel is open. Hiding it here therefore empties the
+ *    extensions panel — measured as a 336x60 panel listing 0 items with
+ *    uBlock installed, i.e. the extension silently unreachable.
+ */
+#nav-bar-customization-target > toolbarbutton:not(#unified-extensions-button),
+#nav-bar-customization-target
+  > toolbaritem:not(#urlbar-container):not(.unified-extensions-item),
+#back-button,
+#forward-button,
+#reload-button,
+#stop-button,
+#home-button,
+#stop-reload-button,
+#downloads-button,
+#library-button,
+#sidebar-button,
+#fxa-toolbar-menu-button,
+#PanelUI-button,
+#PanelUI-menu-button,
+#customizableui-special-spring1,
+#customizableui-special-spring2,
+#nav-bar-overflow-button,
+#urlbar-go-button,
+#pageActionButton,
+#page-action-buttons,
+#star-button-box,
+#reader-mode-button,
+#picture-in-picture-button,
+#translations-button,
+#urlbar-zoom-button,
+#tracking-protection-icon-container,
+#identity-permission-box,
+.urlbar-page-action,
+/* --- Firefox 157 additions inside the input row --- */
+#remote-control-box,
+#trust-icon-container,
+#urlbar-scheme,
+.searchmode-switcher,
+.searchmode-switcher-panel,
+.urlbar-searchmode-switcher {
+  display: none !important;
+}
+
+/* --- summoned state ---------------------------------------------------- */
+
+/* Centred with `left: 50%` + a negative margin rather than
+ * `transform: translateX(-50%)`.
+ *
+ * The results panel (.urlbarView) is rendered in the TOP LAYER as a popover on
+ * Firefox 157 — it carries `popover-open` and computes to position:fixed. Top
+ * layer content is laid out against the viewport and does NOT inherit an
+ * ancestor's transform, so a transform-centred #nav-bar moved the input but
+ * left the panel behind: measured nav-bar at x=223 with its panel at x=634,
+ * exactly the 410px translate it ignored. A margin offset is real layout, so
+ * both move together.
+ */
+#nav-bar:focus-within {
+  --mz-prompt-width: min(820px, 76vw);
+
+  pointer-events: auto;
+  overflow: visible;
+  height: auto !important;
+
+  top: 16vh !important;
+  left: 50% !important;
+  width: var(--mz-prompt-width) !important;
+  margin-inline-start: calc(var(--mz-prompt-width) / -2) !important;
+
+  background: var(--mz-panel) !important;
+  border: 1px solid var(--mz-accent) !important;
+}
+
+/* While summoned, the customization target goes back to being an ordinary
+ * full-width row holding the urlbar, and the extension icons step aside —
+ * `visibility`, not `display`, so the panel keeps its items if it is open. */
+#nav-bar:focus-within > #nav-bar-customization-target {
+  position: static !important;
+  width: 100% !important;
+  height: auto !important;
+  justify-content: flex-start !important;
+}
+
+#nav-bar:focus-within #urlbar-container {
+  position: static !important;
+  width: 100% !important;
+  height: auto !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  overflow: visible !important;
+}
+
+#nav-bar:focus-within > #nav-bar-customization-target > .unified-extensions-item,
+#nav-bar:focus-within > #nav-bar-customization-target > toolbaritem.unified-extensions-item,
+#nav-bar:focus-within #unified-extensions-button {
+  visibility: hidden !important;
+  width: 0 !important;
+  min-width: 0 !important;
+}
+
+#urlbar-container {
+  margin: 0 !important;
+  padding: 0 !important;
+  min-width: 0 !important;
+}
+
+#urlbar {
+  --urlbar-height: 26px;
+  --urlbar-container-height: 26px;
+  --urlbar-toolbar-width: 0px;
+  --urlbar-margin-inline: 0px;
+  min-height: 26px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* The megabar's own floating surfaces. We draw the frame on #nav-bar instead,
+ * so both of these must go fully transparent — `.urlbar-background` is the
+ * sheet behind the input (measured 818x50, overhanging the 26px input row) and
+ * `.urlbarView-background` is the one behind the results.
+ */
+.urlbar-background,
+.urlbarView-background {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Breakout offsets exist to let the panel overhang a normal toolbar. Ours is
+ * already the overlay, so pin it flush in every state.
+ */
+#urlbar[breakout],
+#urlbar[breakout][breakout-extend],
+#urlbar[open] {
+  inset-inline-start: 0 !important;
+  left: 0 !important;
+  right: auto !important;
+  top: 0 !important;
+  width: 100% !important;
+  margin-inline: 0 !important;
+}
+
+.urlbar-input-container {
+  padding: 0 !important;
+  border: none !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  background: transparent !important;
+}
+
+/* The prompt. A browser's address bar, as a shell. */
+.urlbar-input-container::before {
+  content: ":";
+  color: var(--mz-accent);
+  font-family: var(--mz-font);
+  font-size: 13px;
+  font-weight: bold;
+  align-self: center;
+  padding-inline: 0.9ch 0.6ch;
+}
+
+.urlbar-input-box {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#urlbar-input {
+  font-family: var(--mz-font) !important;
+  font-size: 13px !important;
+  color: var(--mz-fg) !important;
+  caret-color: var(--mz-accent) !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+#urlbar-input::selection {
+  background: var(--mz-accent) !important;
+  color: var(--mz-bg) !important;
+}
+
+#urlbar-label-box,
+#urlbar-search-mode-indicator {
+  display: none !important;
+}
+
+/* --- results: a plain list, no cards ----------------------------------- */
+
+.urlbarView {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-top: 1px solid var(--mz-border) !important;
+  background: var(--mz-panel) !important;
+  box-shadow: none !important;
+  /* The popover is sized from the anchor; keep it from overhanging the frame. */
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.urlbarView-body-outer,
+.urlbarView-body-inner {
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+#urlbar-results {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.urlbarView-row {
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: 20px !important;
+}
+
+.urlbarView-row-inner {
+  padding: 2px 1ch !important;
+  border-radius: 0 !important;
+  min-height: 20px !important;
+  /* Long suggestion URLs otherwise push the row past the frame. */
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.urlbarView-row[selected] > .urlbarView-row-inner,
+.urlbarView-row:hover > .urlbarView-row-inner,
+.urlbarView-row[selected] .urlbarView-row-inner {
+  background: var(--mz-accent) !important;
+  color: var(--mz-bg) !important;
+}
+
+.urlbarView-row[selected] .urlbarView-title,
+.urlbarView-row[selected] .urlbarView-url,
+.urlbarView-row[selected] .urlbarView-title-separator,
+.urlbarView-row[selected] strong,
+.urlbarView-row[selected] .urlbarView-title strong {
+  color: var(--mz-bg) !important;
+}
+
+/* One result = one line, always.
+ *
+ * The row body is `.urlbarView-row-body > .urlbarView-row-body-top`, a flex
+ * row holding the title group and the URL. At narrow widths it wraps and the
+ * result becomes two lines, which breaks the list rhythm. `min-width: 0` is
+ * the load-bearing part: flex items default to `min-width: auto`, so a long
+ * URL refuses to shrink and pushes itself past the frame instead of
+ * ellipsing. Measured overflow: a 553px description inside an 818px frame.
+ */
+.urlbarView-row-body,
+.urlbarView-row-body-top {
+  flex-wrap: nowrap !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.urlbarView-row-body-top-no-wrap {
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+}
+
+.urlbarView-title,
+.urlbarView-url {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.urlbarView-url {
+  flex: 0 1 auto !important;
+}
+
+/* Secondary lines Firefox adds for rich results — a window list has no room. */
+.urlbarView-row-body-description,
+.urlbarView-row-body-bottom,
+.urlbarView-tags,
+.urlbarView-row-buttons {
+  display: none !important;
+}
+
+.urlbarView-title-separator {
+  color: var(--mz-border) !important;
+}
+
+.urlbarView-title {
+  color: var(--mz-fg) !important;
+  font-weight: normal !important;
+}
+
+/* Firefox bolds the matched substring with <strong>; keep it legible but
+ * un-shouty by colouring rather than weighting it. */
+.urlbarView-title strong,
+.urlbarView-url strong {
+  font-weight: normal !important;
+  color: var(--mz-accent) !important;
+}
+
+.urlbarView-url {
+  color: var(--mz-blue) !important;
+}
+
+.urlbarView-row[selected] .urlbarView-url strong,
+.urlbarView-row[selected] .urlbarView-title strong {
+  color: var(--mz-bg) !important;
+  text-decoration: underline !important;
+}
+
+/* Icons, chiclets, one-off search engine buttons, tips, banners — gone. */
+.urlbarView-favicon,
+.urlbarView-type-icon,
+.urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-favicon,
+#urlbar-one-offs,
+.search-one-offs,
+.urlbarView-tip-button,
+.urlbarView-row-selectable[type="tip"],
+.urlbarView-dynamic-onboardTabToSearch-text,
+#urlbar-anon-search-settings,
+.urlbarView-button,
+.urlbarView-action,
+.urlbarView-group,
+.urlbarView-group-heading,
+.urlbarView-row[label]::before {
+  display: none !important;
+}
+
+/* ===========================================================================
+ * 5. Bookmarks bar, sidebar header, status bar
+ * ======================================================================== */
+
+#PersonalToolbar,
+#sidebar-header,
+#sidebar-splitter,
+#status-bar,
+#notification-popup-box,
+#customization-container > * {
+  display: none !important;
+}
+
+#sidebar-box {
+  background: var(--mz-bg) !important;
+  border-inline-end: 1px solid var(--mz-border) !important;
+}
+
+/* Link target on hover: a WM message line, bottom-left, square, mono. */
+#statuspanel {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#statuspanel-label {
+  background: var(--mz-panel) !important;
+  color: var(--mz-comment) !important;
+  border: 1px solid var(--mz-border) !important;
+  border-inline-start: none !important;
+  border-block-end: none !important;
+  border-radius: 0 !important;
+  padding: 2px 1ch !important;
+  font-family: var(--mz-font) !important;
+  font-size: 10.5px !important;
+}
+
+/* ===========================================================================
+ * 6. Findbar — a `/` prompt at the bottom of the window
+ * ======================================================================== */
+
+findbar {
+  background: var(--mz-panel) !important;
+  border: none !important;
+  border-top: 1px solid var(--mz-border) !important;
+  padding: 1px 1ch !important;
+  min-height: 0 !important;
+  color: var(--mz-fg) !important;
+}
+
+findbar::before {
+  content: "/";
+  color: var(--mz-accent);
+  font-family: var(--mz-font);
+  font-weight: bold;
+  align-self: center;
+  margin-inline-end: 0.5ch;
+}
+
+.findbar-textbox {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  /* Firefox draws a 2px gold focus ring here (measured outline-width: 2px).
+   * The caret already shows focus; the ring just boxes the text. */
+  outline: none !important;
+  color: var(--mz-fg) !important;
+  caret-color: var(--mz-accent) !important;
+  font-family: var(--mz-font) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  min-height: 20px !important;
+}
+
+.findbar-textbox::selection {
+  background: var(--mz-accent) !important;
+  color: var(--mz-bg) !important;
+}
+
+/* findbar's only visible child is .findbar-container; flatten its padding so
+ * the '/' prompt sits flush with the text. */
+.findbar-container {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.findbar-textbox[status="notfound"] {
+  color: var(--mz-red) !important;
+  background: transparent !important;
+}
+
+.findbar-find-status,
+.found-matches {
+  color: var(--mz-comment) !important;
+  margin-inline-start: 1ch !important;
+}
+
+findbar toolbarbutton,
+.findbar-closebutton,
+.findbar-find-previous,
+.findbar-find-next,
+.findbar-highlight,
+.findbar-case-sensitive,
+.findbar-match-diacritics,
+.findbar-entire-word,
+findbar checkbox,
+findbar label.findbar-label {
+  display: none !important;
+}
+
+/* ===========================================================================
+ * 7. Menus and panels — square, bordered, mono
+ * ======================================================================== */
+
+menupopup,
+panel {
+  --panel-background: var(--mz-panel);
+  --panel-border-radius: 0;
+  --panel-shadow-margin: 0px;
+  appearance: none !important;
+}
+
+menupopup {
+  background: var(--mz-panel) !important;
+  border: 1px solid var(--mz-border) !important;
+  border-radius: 0 !important;
+  padding: 2px 0 !important;
+  box-shadow: none !important;
+  color: var(--mz-fg) !important;
+}
+
+menuitem,
+menu {
+  appearance: none !important;
+  padding: 1px 1.5ch !important;
+  margin: 0 !important;
+  min-height: 0 !important;
+  border-radius: 0 !important;
+  color: var(--mz-fg) !important;
+}
+
+menuitem[_moz-menuactive="true"],
+menu[_moz-menuactive="true"] {
+  background: var(--mz-accent) !important;
+  color: var(--mz-bg) !important;
+}
+
+menuitem[disabled="true"],
+menu[disabled="true"] {
+  color: var(--mz-border) !important;
+}
+
+menuseparator {
+  appearance: none !important;
+  border: none !important;
+  border-top: 1px solid var(--mz-border) !important;
+  margin: 2px 0 !important;
+  padding: 0 !important;
+}
+
+.menu-icon,
+.menu-iconic-icon,
+menuitem > .menu-iconic-left,
+menuitem image.menu-iconic-icon {
+  display: none !important;
+}
+
+.panel-arrow,
+panel::part(arrow),
+menupopup::part(arrowscrollbox)::before {
+  display: none !important;
+}
+
+.panel-arrowcontent,
+panel::part(content) {
+  background: var(--mz-panel) !important;
+  border: 1px solid var(--mz-border) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* Doorhangers (permission prompts, download finished, etc.) */
+.panel-header,
+#appMenu-popup .panel-header {
+  border-bottom: 1px solid var(--mz-border) !important;
+  background: var(--mz-panel) !important;
+  min-height: 0 !important;
+}
+
+.subviewbutton,
+toolbarbutton.subviewbutton {
+  border-radius: 0 !important;
+  padding: 2px 1.5ch !important;
+  min-height: 0 !important;
+  color: var(--mz-fg) !important;
+}
+
+.subviewbutton:hover {
+  background: var(--mz-accent) !important;
+  color: var(--mz-bg) !important;
+}
+
+.subviewbutton > .toolbarbutton-icon,
+.subviewbutton image.toolbarbutton-icon {
+  display: none !important;
+}
+
+/* ===========================================================================
+ * 8. Tooltips
+ * ======================================================================== */
+
+tooltip,
+#main-window tooltip {
+  appearance: none !important;
+  background: var(--mz-panel) !important;
+  color: var(--mz-fg) !important;
+  border: 1px solid var(--mz-border) !important;
+  border-radius: 0 !important;
+  padding: 1px 1ch !important;
+  font-family: var(--mz-font) !important;
+  font-size: 10.5px !important;
+}
+
+/* ===========================================================================
+ * 9. Scrollbars in the chrome
+ * ======================================================================== */
+
+#navigator-toolbox scrollbar,
+menupopup scrollbar,
+panel scrollbar {
+  appearance: none !important;
+  background: transparent !important;
+  width: 4px !important;
+}
+
+#navigator-toolbox scrollbar thumb,
+menupopup scrollbar thumb,
+panel scrollbar thumb {
+  background: var(--mz-border) !important;
+  border-radius: 0 !important;
+}
+
+/* ===========================================================================
+ * 10. Fullscreen — nothing at all
+ * ======================================================================== */
+
+#navigator-toolbox[style*="margin-top"],
+:root[inFullscreen] #navigator-toolbox,
+:root[inDOMFullscreen] #navigator-toolbox {
+  border-bottom: none !important;
+}
+
+:root[inDOMFullscreen] #TabsToolbar {
+  display: none !important;
+}
+
+#fullscr-toggler,
+.notification-anchor-icon,
+#fullscreen-warning,
+#domFullScreen-warning {
+  display: none !important;
+}
