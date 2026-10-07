@@ -4,7 +4,8 @@
 #
 # macOS draws desktop icons on the main display only, so that is the one whose
 # emptiness decides. Icons stay hidden the rest of the time, which is what
-# HideDesktop=1 was already doing permanently -- this just makes it conditional.
+# StandardHideDesktopIcons was already doing permanently -- this just makes it
+# conditional.
 #
 # Driven by yabai signals (see .yabairc), not a timer: it runs on window and
 # space events, costs ~15ms, and does nothing when the state has not changed.
@@ -31,22 +32,35 @@ set -eu
 
 STATE_FILE="${TMPDIR:-/tmp}/.desktop_icons_state"
 
+# The key that actually controls desktop icon visibility.
+#
+# NOT HideDesktop -- that one is part of the click-wallpaper-to-reveal-desktop
+# behaviour and does nothing to the icons themselves; setting it true leaves
+# icons on screen even after restarting WindowManager. Verified by observation,
+# in both directions, before relying on it.
+#
+# With Stage Manager enabled the equivalent key is StageManagerHideWidgets'
+# sibling, StageManagerHideDesktopIcons; this machine runs Stage Manager off
+# (com.apple.WindowManager GloballyEnabled = 0), so the Standard variant is the
+# one in effect. If Stage Manager is ever turned on, this needs revisiting.
+ICON_KEY=StandardHideDesktopIcons
+
 apply() {
   want="$1"   # "show" or "hide"
 
   # Skip the write when nothing changed. `defaults write` is cheap but not
-  # free, and WindowManager redraws on every write even when the value is
-  # identical, which produces a visible flicker during rapid window churn.
+  # free, and WindowManager reacts to every write even when the value is
+  # identical, which can flicker during rapid window churn.
   if [ -f "$STATE_FILE" ] && [ "$(cat "$STATE_FILE" 2>/dev/null)" = "$want" ]; then
     exit 0
   fi
 
   case "$want" in
-    show) value=false ;;   # HideDesktop=false -> icons visible
+    show) value=false ;;   # hide-icons=false -> icons visible
     hide) value=true  ;;
   esac
 
-  defaults write com.apple.WindowManager HideDesktop -bool "$value"
+  defaults write com.apple.WindowManager "$ICON_KEY" -bool "$value"
   printf '%s' "$want" > "$STATE_FILE"
 }
 
