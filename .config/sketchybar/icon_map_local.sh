@@ -18,8 +18,12 @@
 __icon_map_local() {
   case "$1" in
     # "ego lite" is a Chromium-based browser the upstream map does not know.
+    # Deliberately NOT :google_chrome: -- Chrome itself is also in use here, and
+    # two browsers sharing a glyph makes the space indicators unreadable.
+    # :min_browser: is a generic minimal-browser mark, close enough in spirit
+    # and distinct from every other browser on this machine.
     "ego lite")
-      icon_result=":google_chrome:"
+      icon_result=":min_browser:"
       ;;
     *)
       # No override: leave whatever icon_map.sh decided.

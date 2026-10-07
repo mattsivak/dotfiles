@@ -54,16 +54,29 @@ glyph_for() {
 
 # Minimised and hidden windows still belong to the space but are not on it in
 # any visual sense, so they are excluded -- the same rule the desktop-icon
-# script uses. Duplicate apps collapse to one glyph: three terminal windows is
+# script uses. Duplicate app names collapse here: three terminal windows is
 # still "there is a terminal here".
 APPS=$(yabai -m query --windows --space "$SID" 2>/dev/null \
   | jq -r '[.[] | select(."is-minimized" == false and ."is-hidden" == false) | .app]
            | unique | .[]' 2>/dev/null)
 
+# Deduplicating app names is not enough: distinct apps can share a glyph.
+# "Beeper" and "Beeper Desktop" are two different window owners that both map
+# to :beeper:, which rendered as two identical icons side by side. The same
+# goes for helper processes that ship under a slightly different name. So the
+# dedupe happens on the glyph, after mapping, not on the name before it.
 GLYPHS=""
+SEEN=""
 while IFS= read -r app; do
   [ -z "$app" ] && continue
   glyph_for "$app"
+  [ -z "$icon_result" ] && continue
+  # Substring match is safe because every glyph is colon-delimited, so
+  # ":beeper:" cannot match inside ":beeper_beta:" without the colons lining up.
+  case "$SEEN" in
+    *"$icon_result"*) continue ;;
+  esac
+  SEEN="${SEEN}${icon_result}"
   GLYPHS="${GLYPHS}${icon_result}"
 done <<< "$APPS"
 
