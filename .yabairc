@@ -11,9 +11,6 @@ yabai -m config right_padding  0
 yabai -m config window_gap     0
 #yabai -m config external_bar   all:38:0 
 
-borders active_color=0xff000000 inactive_color=0xff000000 width=0.0 style=square
-
-
 yabai -m config auto_balance on
 
 # set mouse interaction modifier key (default: fn)
