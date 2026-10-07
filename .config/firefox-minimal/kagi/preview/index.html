@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<!--
+  Offline preview of kagi.css.
+
+  Kagi's /search redirects to /signin without a session (verified: 302), so the
+  real SERP cannot be rendered here. This mock reproduces Kagi's actual DOM
+  structure and class names — taken from Kagi's documented selector list and
+  cross-checked against two maintained community themes (kagi-darker 3.0,
+  kagi-google-theme) — so the stylesheet is exercised against the same hooks it
+  will meet in production.
+
+  It is a preview, NOT proof: class names drift, and only the live page settles
+  whether every rule lands. Treat an element that looks wrong here as a real
+  bug, but an element that looks right as "probably right".
+-->
+<html lang="en" class="theme_dark">
+<head>
+<meta charset="utf-8">
+<title>kagi.css preview</title>
+<link rel="stylesheet" href="../kagi.css">
+<style>
+  /* Preview-harness only: approximates Kagi's own page scaffolding, which the
+     theme does not ship. Nothing here is part of kagi.css. */
+  body { margin: 0; }
+  .app-nav { padding: 8px 16px; display: flex; gap: 1ch; align-items: center; }
+  .serp-nav { display: flex; gap: 0; padding: 4px 16px; }
+  .nav_item { display: inline-block; cursor: pointer; }
+  #_0_app_content { max-width: 680px; padding: 18px 16px; }
+  .search-input-container { display: flex; align-items: center; padding: 0 1ch; }
+  .search-input-container input { flex: 1; padding: 6px 0; outline: none; }
+  .__sri-url { display: flex; gap: 0; }
+  .harness-label { color: #565b66; font: 11px "Hack Nerd Font Mono", monospace;
+                   padding: 14px 16px 2px; text-transform: uppercase;
+                   letter-spacing: .1em; border-top: 1px dashed #1e222a; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<div class="app-nav">
+  <div class="search-input-container _0_search-input-container _0_no_multiline">
+    <input type="text" value="tiling window manager macos">
+  </div>
+</div>
+
+<nav class="serp-nav">
+  <div class="nav_item --active">search</div>
+  <div class="nav_item">images</div>
+  <div class="nav_item">videos</div>
+  <div class="nav_item">news</div>
+  <div class="nav_item">podcasts</div>
+</nav>
+
+<main id="_0_app_content">
+
+  <div class="instant-answer ia-wrapper">
+    <div class="ia-body">yabai is a tiling window manager for macOS based on binary
+    space partitioning, usually paired with skhd for hotkeys.</div>
+  </div>
+
+  <div class="harness-label">organic results</div>
+
+  <div class="search-result _0_SRI">
+    <div class="__sri-title">
+      <a class="__sri_title_link" href="#">koekeishiya/yabai: A tiling window manager for macOS</a>
+    </div>
+    <div class="__sri-url __sri_url_path_box">
+      <span class="host">github.com</span><span class="path">/koekeishiya/yabai</span>
+    </div>
+    <div class="__sri-desc">yabai is a window management utility that gives you
+      control over your windows. It <b>partitions</b> your screen and manages
+      spaces, with a scripting interface.
+      <span class="__sri-time --new">2 days ago</span>
+    </div>
+  </div>
+
+  <div class="search-result _0_SRI">
+    <div class="__sri-title">
+      <a class="__sri_title_link" href="#">Setting up yabai and skhd on Apple Silicon</a>
+    </div>
+    <div class="__sri-url __sri_url_path_box">
+      <span class="host">example.dev</span><span class="path">/posts/yabai-apple-silicon-setup</span>
+    </div>
+    <div class="__sri-desc">A walkthrough covering SIP, the scripting addition,
+      and why <b>skhd</b> needs Accessibility permission before any hotkey fires.
+      <span class="__sri-time">4 months ago</span>
+    </div>
+  </div>
+
+  <div class="search-result _0_SRI">
+    <div class="__sri-title">
+      <a class="__sri_title_link" href="#" style="color:var(--mz-purple)">Comparing yabai, Amethyst and Rectangle (visited)</a>
+    </div>
+    <div class="__sri-url __sri_url_path_box">
+      <span class="host">news.ycombinator.com</span><span class="path">/item?id=00000000</span>
+    </div>
+    <div class="__sri-desc">Discussion thread weighing BSP tiling against simpler
+      window snapping tools on macOS.</div>
+  </div>
+
+  <div class="harness-label">grouped result</div>
+
+  <div class="sri-group sr-group">
+    <div class="__srgi">
+      <div class="__srgi-title"><a href="#">yabai wiki — Installation</a></div>
+      <div class="__sri-url __sri_url_path_box">
+        <span class="host">github.com</span><span class="path">/koekeishiya/yabai/wiki/Installing-yabai</span>
+      </div>
+      <div class="__sri-body">Homebrew install, SIP configuration, and the
+        codesigning steps required for the scripting addition.</div>
+    </div>
+    <div class="__srgi">
+      <div class="__srgi-title"><a href="#">yabai wiki — Configuration</a></div>
+      <div class="__sri-url __sri_url_path_box">
+        <span class="host">github.com</span><span class="path">/koekeishiya/yabai/wiki/Configuration</span>
+      </div>
+      <div class="__sri-body">Padding, gaps, layout modes and signals.</div>
+    </div>
+  </div>
+
+  <div class="harness-label">widget / sidebar furniture</div>
+
+  <div class="widgetContent">
+    <div class="widgetItems">
+      <div class="widgetItem">Related: skhd, sketchybar, Amethyst</div>
+    </div>
+  </div>
+
+  <div style="margin-top:12px">
+    <button class="btn">Feedback</button>
+    <button class="btn">More results</button>
+  </div>
+
+</main>
+</body>
+</html>

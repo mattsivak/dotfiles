@@ -1,0 +1,589 @@
+/* ===========================================================================
+ * kagi — terminal / tiling-WM search
+ * ---------------------------------------------------------------------------
+ * Companion to ~/dotfiles/.config/firefox-minimal. Same ayu dark palette, same
+ * Hack Nerd Font Mono, same square-everything rules, so a Kagi tab reads as a
+ * continuation of the browser chrome rather than a web page inside it.
+ *
+ * A result is laid out like a line of program output:
+ *
+ *     ├─ Example Domain
+ *     │  example.com/path
+ *     │  This domain is for use in illustrative examples...
+ *
+ * INSTALL
+ *   Kagi → Settings → Appearance → Custom CSS → paste → Enable → Apply.
+ *   https://kagi.com/settings?p=custom_css
+ *
+ * ESCAPE HATCH
+ *   Append ?no_css to any Kagi URL to render without this, e.g.
+ *   https://kagi.com/search?q=test&no_css
+ *   Nothing here can lock you out — settings pages are never styled by Kagi's
+ *   custom CSS, so Appearance stays reachable even if this file is broken.
+ *
+ * NOTES
+ *   - Kagi caps custom CSS at 40,000 characters including whitespace.
+ *   - Set Appearance → Theme to DARK first. This themes the dark variant; on
+ *     light mode the page keeps light backgrounds Kagi sets outside these
+ *     selectors.
+ *   - Selectors verified against Kagi's documented list plus two maintained
+ *     community themes (kagi-darker 3.0, kagi-google-theme). Kagi's markup
+ *     moves; `__sri-*` is the current result-item vocabulary.
+ * ======================================================================== */
+
+/* --- palette: ayu dark, matching neovim/sketchybar/ghostty --------------- */
+
+:root,
+.theme_dark,
+.theme_moon_dark,
+.theme_black {
+  --mz-bg: #0b0e14;
+  --mz-line: #11151c;
+  --mz-panel: #0f131a;
+  --mz-border: #1e222a;
+  --mz-fg: #bfbdb6;
+  --mz-dim: #565b66;
+  --mz-comment: #636a72;
+  --mz-accent: #e6b450;   /* gold   — focus, active, prompt */
+  --mz-blue: #59c2ff;     /* blue   — titles */
+  --mz-cyan: #39bae6;
+  --mz-green: #aad94c;    /* green  — urls */
+  --mz-purple: #d2a6ff;   /* purple — visited */
+  --mz-orange: #ff8f40;
+  --mz-red: #d95757;
+
+  --mz-font: "Hack Nerd Font Mono", "SF Mono", Menlo, ui-monospace, monospace;
+  --mz-size: 13px;
+  --mz-gutter: 1.6ch;
+
+  /* Kagi's own variables — set these and much of the page follows without
+   * needing element rules. Names taken from Kagi's documented theme vars. */
+  --background-color: var(--mz-bg);
+  --color-bg: var(--mz-bg);
+  --color-bg-0: var(--mz-bg);
+  --color-bg-1: var(--mz-line);
+  --color-bg-2: var(--mz-panel);
+  --color-text: var(--mz-fg);
+  --color-text-0: var(--mz-fg);
+  --color-text-1: var(--mz-dim);
+  --color-text-2: var(--mz-comment);
+  --search-result-title: var(--mz-blue);
+  --search-result-url: var(--mz-green);
+  --result-item-title-border: var(--mz-bg);
+  --site_info_bottom_bg: var(--mz-bg);
+  --color-primary: var(--mz-accent);
+  --primary-hover: var(--mz-accent);
+  --primary-visited: var(--mz-purple);
+  --color-link: var(--mz-blue);
+  --color-link-visited: var(--mz-purple);
+  --nav_n_se_line: var(--mz-accent);
+  --color-border: var(--mz-border);
+  --border-color: var(--mz-border);
+  --search-result-gap: 0px;
+  --m_sri_gap_color: transparent;
+
+  color-scheme: dark;
+}
+
+/* --- global ------------------------------------------------------------- */
+
+html,
+body,
+#layout-v2,
+#_0_app_content,
+.app-content-box,
+main {
+  background: var(--mz-bg) !important;
+  color: var(--mz-fg) !important;
+  font-family: var(--mz-font) !important;
+  letter-spacing: normal !important;
+}
+
+/* Square everything, kill every transition. A WM does not animate. */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  animation-duration: 0s !important;
+  transition-duration: 0s !important;
+}
+
+/* Scrollbars to match the chrome. */
+* {
+  scrollbar-color: var(--mz-border) transparent !important;
+  scrollbar-width: thin !important;
+}
+
+/* ===========================================================================
+ * Header / search box — a prompt, not a pill
+ * ======================================================================== */
+
+.app-nav,
+.top-panel,
+.top-panel-box,
+.m-h {
+  background: var(--mz-bg) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--mz-border) !important;
+}
+
+.search-input-container,
+._0_search-input-container,
+._0_search-input-container._0_no_multiline,
+.center-content-box .search-input-container {
+  background: var(--mz-panel) !important;
+  border: 1px solid var(--mz-border) !important;
+  border-radius: 0 !important;
+  min-height: 30px !important;
+  height: auto !important;
+  box-shadow: none !important;
+}
+
+.search-input-container:focus-within,
+._0_search-input-container:focus-within,
+.center-content-box .search-input-container:focus-within {
+  border-color: var(--mz-accent) !important;
+  background: var(--mz-panel) !important;
+}
+
+/* The `:` prompt, matching the browser's dmenu bar. */
+.search-input-container::before,
+._0_search-input-container::before {
+  content: ":";
+  color: var(--mz-accent);
+  font-family: var(--mz-font);
+  font-weight: bold;
+  font-size: var(--mz-size);
+  align-self: center;
+  padding-inline: 0.9ch 0.2ch;
+  flex: 0 0 auto;
+}
+
+input[type="text"],
+input[type="search"],
+textarea,
+.search-input,
+#searchInput {
+  background: transparent !important;
+  color: var(--mz-fg) !important;
+  font-family: var(--mz-font) !important;
+  font-size: var(--mz-size) !important;
+  caret-color: var(--mz-accent) !important;
+  border: none !important;
+}
+
+::selection {
+  background: var(--mz-accent) !important;
+  color: var(--mz-bg) !important;
+}
+
+::placeholder {
+  color: var(--mz-dim) !important;
+  opacity: 1 !important;
+}
+
+/* Autosuggest dropdown — a plain list, like the urlbar's. */
+.auto_suggestions,
+.k_ui_dropdown,
+.k_ui_dropdown_data_list {
+  background: var(--mz-panel) !important;
+  border: 1px solid var(--mz-border) !important;
+  font-family: var(--mz-font) !important;
+}
+
+.auto_suggestions .item:hover,
+.auto_suggestions .selected,
+.k_ui_dropdown_data_list .selected,
+.k_ui_dropdown_first_item:hover {
+  background: var(--mz-accent) !important;
+  color: var(--mz-bg) !important;
+}
+
+/* ===========================================================================
+ * Nav / lenses / tabs — a tmux-ish row of plain words
+ * ======================================================================== */
+
+.serp-nav,
+.app-nav,
+.nav_separator,
+.serp_nav_end {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--mz-border) !important;
+  font-family: var(--mz-font) !important;
+}
+
+.serp-nav .nav_item,
+.serp-nav .nav-item,
+.nav_item a,
+.nav-item a {
+  color: var(--mz-dim) !important;
+  border: none !important;
+  padding: 1px 1ch !important;
+  font-size: 12px !important;
+  text-transform: lowercase;
+}
+
+.serp-nav .nav_item:hover,
+.nav_item a:hover {
+  color: var(--mz-fg) !important;
+  background: transparent !important;
+}
+
+/* Active lens: reverse video, exactly like the active tab in the strip. */
+.serp-nav .nav_item.--active,
+.serp-nav .nav-item.--active,
+.nav_item.--active a,
+.--active > .nav_item {
+  color: var(--mz-bg) !important;
+  background: var(--mz-accent) !important;
+  border: none !important;
+  font-weight: bold !important;
+}
+
+/* ===========================================================================
+ * Results — each one a block of program output
+ * ======================================================================== */
+
+.search-result,
+.sri-group,
+._0_SRI,
+.sr-group,
+.__srgi {
+  background: transparent !important;
+  border: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  margin: 0 0 0.9em 0 !important;
+  padding: 0 0 0 var(--mz-gutter) !important;
+  position: relative;
+}
+
+/* The tree guide: a left rule in the border colour that brightens on hover,
+ * so a page of results scans like `tree` output.
+ *
+ * `position: relative` is set on the result blocks above; without it the
+ * absolutely-positioned rule escapes to the nearest positioned ancestor and
+ * draws down the whole page.
+ */
+.search-result::before,
+.sri-group::before,
+._0_SRI::before,
+.__srgi::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.35em;
+  bottom: 0.1em;
+  border-left: 1px solid var(--mz-border);
+  pointer-events: none;
+}
+
+.search-result:hover::before,
+.sri-group:hover::before,
+._0_SRI:hover::before,
+.__srgi:hover::before {
+  border-left-color: var(--mz-accent);
+}
+
+/* A grouped result nests, so its children must not redraw the parent's rule
+ * at the same x — indent them instead. */
+.sri-group .__srgi,
+.sr-group .__srgi {
+  padding-left: var(--mz-gutter) !important;
+}
+
+/* --- title -------------------------------------------------------------- */
+
+.__sri-title,
+.__srgi-title,
+._0_TITLE,
+.__sri-title-box {
+  margin: 0 0 1px 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  line-height: 1.35 !important;
+}
+
+.__sri_title_link,
+.__sri-title a,
+.__srgi-title a,
+._0_TITLE a,
+.newsResultTitle a,
+.videoResultTitle a {
+  color: var(--mz-blue) !important;
+  font-family: var(--mz-font) !important;
+  font-size: var(--mz-size) !important;
+  font-weight: bold !important;
+  border: none !important;
+  text-decoration: none !important;
+}
+
+/* :visited BEFORE :hover — LVHA order. Firefox also restricts which
+ * properties a :visited rule may set (colour is permitted, layout is not),
+ * and it never applies to a link the page has not actually been to, so this
+ * is invisible in a mock and only shows on real history. */
+.__sri_title_link:visited,
+.__sri-title a:visited,
+.__srgi-title a:visited,
+._0_TITLE a:visited {
+  color: var(--mz-purple) !important;
+}
+
+.__sri_title_link:hover,
+.__sri-title a:hover,
+.__srgi-title a:hover,
+._0_TITLE a:hover {
+  color: var(--mz-accent) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 2px;
+}
+
+/* --- url ---------------------------------------------------------------- */
+
+.__sri-url,
+.__sri_url_path_box,
+._0_URL,
+.sri-url {
+  font-family: var(--mz-font) !important;
+  font-size: 11.5px !important;
+  margin: 0 0 2px 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+.__sri-url .host,
+.__sri_url_path_box .host,
+.host {
+  color: var(--mz-green) !important;
+}
+
+.__sri-url .path,
+.__sri_url_path_box .path,
+.path {
+  color: var(--mz-comment) !important;
+}
+
+/* --- description -------------------------------------------------------- */
+
+.__sri-desc,
+.__sri-body,
+._0_DESC,
+.sri-desc {
+  color: var(--mz-fg) !important;
+  font-family: var(--mz-font) !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  margin: 0 !important;
+  opacity: 0.85;
+}
+
+/* Kagi bolds the matched terms; colour them instead of shouting. */
+.__sri-desc b,
+.__sri-desc strong,
+._0_DESC b,
+.__sri-body b {
+  color: var(--mz-accent) !important;
+  font-weight: normal !important;
+}
+
+/* --- per-result furniture ----------------------------------------------- */
+
+/* Favicons are 16px of noise in a monospace list; the hostname already says
+ * which site it is. */
+.__domain-favicon,
+.domain-favicon,
+.sri-favicon {
+  display: none !important;
+}
+
+/* Freshness marker, rendered like a shell annotation rather than a pill. */
+.__sri-time,
+.sri-time {
+  background: transparent !important;
+  color: var(--mz-comment) !important;
+  font-size: 11px !important;
+  padding: 0 !important;
+}
+
+.__sri-time.--new,
+.sri-time.--new {
+  background: transparent !important;
+  color: var(--mz-green) !important;
+}
+
+.__sri_more_menu_box,
+.sri_more_menu_box,
+._0_rank-icons,
+.paywall-icon {
+  opacity: 0.35;
+}
+
+.__sri_more_menu_box:hover,
+.sri_more_menu_box:hover {
+  opacity: 1;
+}
+
+/* ===========================================================================
+ * Panels: instant answers, widgets, sidebar, wiki
+ * ======================================================================== */
+
+.instant-answer,
+.ia-wrapper,
+.widgetContent,
+.widgetItem,
+.widgetItems,
+.wikipediaResult,
+.related-items,
+.list_items,
+.image-preview-wrapper,
+.results_meta,
+.footer-search-results,
+.podcast_result,
+.newsResultItem,
+.videoResultItem {
+  background: var(--mz-panel) !important;
+  border: 1px solid var(--mz-border) !important;
+  border-radius: 0 !important;
+  color: var(--mz-fg) !important;
+  font-family: var(--mz-font) !important;
+}
+
+.instant-answer,
+.ia-wrapper {
+  border-left: 2px solid var(--mz-accent) !important;
+  padding: 0.6em 1ch !important;
+}
+
+/* Sidebar filters. */
+.sidebar-filter-nav-form,
+.sidebar-filter-nav,
+.filter-item,
+.landing-category-select {
+  background: transparent !important;
+  border-color: var(--mz-border) !important;
+  color: var(--mz-dim) !important;
+  font-family: var(--mz-font) !important;
+  font-size: 12px !important;
+}
+
+.filter-item.--active,
+.filter-item:hover {
+  color: var(--mz-accent) !important;
+  background: transparent !important;
+}
+
+/* ===========================================================================
+ * Buttons, toggles, misc controls
+ * ======================================================================== */
+
+.btn,
+button,
+.k_ui_button,
+.dd-toggle,
+.dd-toggle-label,
+.more_search_dropdown_box,
+.arrow_dd {
+  background: transparent !important;
+  color: var(--mz-dim) !important;
+  border: 1px solid var(--mz-border) !important;
+  border-radius: 0 !important;
+  font-family: var(--mz-font) !important;
+  font-size: 12px !important;
+  padding: 1px 1ch !important;
+}
+
+.btn:hover,
+button:hover,
+.k_ui_button:hover {
+  color: var(--mz-bg) !important;
+  background: var(--mz-accent) !important;
+  border-color: var(--mz-accent) !important;
+}
+
+.k_ui_toggle_switch {
+  border-color: var(--mz-border) !important;
+}
+
+a {
+  color: var(--mz-blue);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--mz-accent);
+}
+
+a:visited {
+  color: var(--mz-purple);
+}
+
+code,
+pre,
+kbd {
+  background: var(--mz-line) !important;
+  color: var(--mz-green) !important;
+  border: 1px solid var(--mz-border) !important;
+  font-family: var(--mz-font) !important;
+}
+
+hr,
+.instant-tab-separator,
+.nav_separator {
+  border-color: var(--mz-border) !important;
+  background: var(--mz-border) !important;
+}
+
+/* ===========================================================================
+ * Quieten the chrome-of-the-page
+ * ======================================================================== */
+
+/* Query-info line and the tooltip nags; the results speak for themselves. */
+._0_queryInfo,
+.new-tooltip,
+.quick-search-btn {
+  display: none !important;
+}
+
+/* Keep the quick-answer trigger, just tone it to the palette — it is useful. */
+.quick-answer-trigger-link svg,
+._0_quick_answer_trigger_btn,
+._0_summarize_link {
+  color: var(--mz-accent) !important;
+  fill: var(--mz-accent) !important;
+}
+
+/* ===========================================================================
+ * Mobile / iPhone — reviewed at iPhone widths, so make the strip work there
+ * ======================================================================== */
+
+@media (max-width: 768px) {
+  :root {
+    --mz-size: 14px;     /* a 13px monospace is too tight on a phone */
+    --mz-gutter: 1.1ch;
+  }
+
+  .search-result,
+  .__srgi {
+    margin-bottom: 1.1em !important;
+  }
+
+  .__sri-desc,
+  ._0_DESC {
+    font-size: 13px !important;
+  }
+
+  /* The left tree rule costs horizontal room that matters more on a phone. */
+  .search-result::before,
+  .__srgi::before {
+    display: none;
+  }
+
+  .search-result,
+  .sri-group,
+  .__srgi {
+    padding-left: 0 !important;
+  }
+}
