@@ -51,6 +51,15 @@ sketchybar --bar position=top height=$BAR_HEIGHT color=0x00000000 \
 
 sketchybar --add event window_change
 
+# Title changes get their own event, separate from window_change.
+#
+# window_change fans out to every space indicator (12 of them, each querying
+# yabai and sourcing the 1877-line icon map) at ~110ms per trigger. Titles
+# change on every browser tab switch, page load and Slack channel change, so
+# routing them through window_change would run that fan-out constantly to
+# update one label. This event drives only window_title, at ~16ms.
+sketchybar --add event title_change
+
 ##### Changing Defaults #####
 # We now change some default values, which are applied to all further items.
 # For a full list of all available item properties see:
@@ -135,7 +144,7 @@ sketchybar --add item layout left \
            --set window_title drawing=off label.color=$AYU_UI \
                               label.font="Hack Nerd Font:Italic:13.0" \
                               script="$PLUGIN_DIR/window_title.sh" \
-           --subscribe window_title front_app_switched window_change space_change
+           --subscribe window_title front_app_switched window_change space_change title_change
 
 ##### Adding Right Items #####
 # Right-side items are laid out RIGHT TO LEFT: the first one declared ends up

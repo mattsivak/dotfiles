@@ -25,8 +25,13 @@ TITLE="${FOCUSED#*$'\t'}"
 
 # Nothing focused, no title, or a title that just echoes the app name: the
 # front_app item already covers that case.
-if [ -z "$TITLE" ] || [ "$TITLE" = "$APP" ] || [ "$FOCUSED" = "" ]; then
-  sketchybar --set "$NAME" drawing=off
+#
+# The label is cleared as well as hidden. drawing=off alone leaves the previous
+# value cached, and the next genuine title would briefly show the old one --
+# worse, a query of the item reports a title that is no longer on screen, which
+# looks exactly like a stale-update bug.
+if [ -z "$TITLE" ] || [ "$TITLE" = "$APP" ] || [ -z "$FOCUSED" ]; then
+  sketchybar --set "$NAME" drawing=off label=""
   exit 0
 fi
 

@@ -65,6 +65,15 @@ for ev in window_created window_destroyed window_moved \
   yabai -m signal --add event="$ev" action="sketchybar -m --trigger window_change &> /dev/null"
 done
 
+# Window titles change far more often than the set of windows does -- every
+# browser tab switch, page load and Slack channel change -- so they trigger a
+# cheap event of their own rather than the window_change fan-out across all 12
+# space indicators. Also hooked to window_focused, because focusing a different
+# window changes which title is current without the title itself changing.
+for ev in window_title_changed window_focused; do
+  yabai -m signal --add event="$ev" action="sketchybar -m --trigger title_change &> /dev/null"
+done
+
 # The bar's pill shape depends on which display is the built-in one and how
 # many displays exist, and that is decided when sketchybarrc runs. Plugging or
 # unplugging a monitor renumbers the displays, so the bar has to re-read its
