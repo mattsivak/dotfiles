@@ -393,9 +393,14 @@ findbar *,
 }
 
 /* The address bar must stay focusable (Cmd+L) while contributing no layout to
- * that row. `position: absolute` pulls it out of flow; `display: none` would
- * make it unfocusable and break Cmd+L entirely. */
-#urlbar-container {
+ * the strip. `position: absolute` pulls it out of flow; `display: none` would
+ * make it unfocusable and break Cmd+L entirely.
+ *
+ * The `:not(:focus-within)` is what lets the summoned rule further down win
+ * without an !important arms race — both rules carry !important, so without
+ * it the later-but-equally-specific one would still fight this on every
+ * property it does not restate. */
+#urlbar-container:not(:focus-within) {
   position: absolute !important;
   width: 0 !important;
   height: 0 !important;
@@ -405,6 +410,7 @@ findbar *,
   pointer-events: none !important;
   margin: 0 !important;
   padding: 0 !important;
+  border: none !important;
 }
 
 /* Each PINNED extension: a square status-bar cell matching the strip.
@@ -753,70 +759,59 @@ findbar *,
 #urlbar-scheme,
 .searchmode-switcher,
 .searchmode-switcher-panel,
-.urlbar-searchmode-switcher {
+.urlbar-searchmode-switcher,
+/* #identity-box still exists alongside the newer #trust-icon-container and is
+ * what renders the site-identity chip. On an extension's own page it expands
+ * to a 180px "Extension (moz-extension://…)" label INSIDE the input, which on
+ * a 643px prompt left the typing area at 444px. Measured with SponsorBlock's
+ * options page open. */
+#identity-box,
+#identity-icon-box,
+#identity-icon-label,
+#identity-permission-box {
   display: none !important;
 }
 
 /* --- summoned state ---------------------------------------------------- */
 
-/* Centred with `left: 50%` + a negative margin rather than
- * `transform: translateX(-50%)`.
+/* The PROMPT moves; the strip does not.
  *
- * The results panel (.urlbarView) is rendered in the TOP LAYER as a popover on
- * Firefox 157 — it carries `popover-open` and computes to position:fixed. Top
- * layer content is laid out against the viewport and does NOT inherit an
- * ancestor's transform, so a transform-centred #nav-bar moved the input but
- * left the panel behind: measured nav-bar at x=223 with its panel at x=634,
- * exactly the 410px translate it ignored. A margin offset is real layout, so
- * both move together.
+ * Earlier this overlay was drawn on #nav-bar, which meant the whole toolbar —
+ * including the extension icons living inside it — turned into the centred
+ * box, so the icons had to be hidden while it was open. On a new tab Firefox
+ * auto-focuses the address bar, so that hid the icons exactly when the tab was
+ * most likely to be looked at.
+ *
+ * Now only #urlbar-container is lifted out and centred. #nav-bar stays a
+ * zero-height passthrough and #nav-bar-customization-target stays pinned to
+ * the strip, so the icons are visible in every state.
+ *
+ * Centred with `left: 50%` + a negative margin rather than
+ * `transform: translateX(-50%)`: the results panel (.urlbarView) renders in
+ * the TOP LAYER as a popover, and top-layer content lays out against the
+ * viewport, ignoring an ancestor's transform — measured once as an input at
+ * x=223 with its panel left behind at x=634. A margin offset is real layout,
+ * so the input and its panel move together.
  */
-#nav-bar:focus-within {
+#urlbar-container:focus-within {
   --mz-prompt-width: min(820px, 76vw);
 
-  pointer-events: auto;
-  overflow: visible;
-  height: auto !important;
-
+  position: fixed !important;
   top: 16vh !important;
   left: 50% !important;
+  right: auto !important;
   width: var(--mz-prompt-width) !important;
   margin-inline-start: calc(var(--mz-prompt-width) / -2) !important;
-
-  background: var(--mz-panel) !important;
-  border: 1px solid var(--mz-accent) !important;
-}
-
-/* While summoned, the customization target goes back to being an ordinary
- * full-width row holding the urlbar, and the extension icons step aside —
- * `visibility`, not `display`, so the panel keeps its items if it is open. */
-#nav-bar:focus-within > #nav-bar-customization-target {
-  position: static !important;
-  width: 100% !important;
   height: auto !important;
-  justify-content: flex-start !important;
-}
+  min-width: 0 !important;
 
-#nav-bar:focus-within #urlbar-container {
-  position: static !important;
-  width: 100% !important;
-  height: auto !important;
   opacity: 1 !important;
   pointer-events: auto !important;
   overflow: visible !important;
-}
 
-#nav-bar:focus-within > #nav-bar-customization-target > .unified-extensions-item,
-#nav-bar:focus-within > #nav-bar-customization-target > toolbaritem.unified-extensions-item,
-#nav-bar:focus-within #unified-extensions-button {
-  visibility: hidden !important;
-  width: 0 !important;
-  min-width: 0 !important;
-}
-
-#urlbar-container {
-  margin: 0 !important;
-  padding: 0 !important;
-  min-width: 0 !important;
+  background: var(--mz-panel) !important;
+  border: 1px solid var(--mz-accent) !important;
+  z-index: 2147483647 !important;
 }
 
 #urlbar {
