@@ -67,6 +67,18 @@ hyper - w : betterdisplaycli toggle --hdr
 # b for black.
 meh - b   : ~/.scripts/theme_toggle.sh
 
+# Focus the bookmarks strip in the minimal Firefox chrome. g for "go".
+# Firefox has no command for this and F6 does nothing (measured), so the
+# script replays Cmd+L, Tab, Tab -- a route whose hop count is stable
+# regardless of how many extensions are pinned.
+#
+# Listing only "firefox" with no `*` branch leaves the chord untouched in
+# every other app. A `* : skhd -k "meh - g"` passthrough would be an
+# infinite loop: skhd catches the key it just synthesized.
+meh - g [
+    "firefox" : ~/.scripts/firefox_focus_bookmarks.sh
+]
+
 # internal
 fn + ctrl - h : yabai -m window --swap west  || $(yabai -m window --display west; yabai -m display --focus west)
 fn + ctrl - j : yabai -m window --swap south || $(yabai -m window --display south; yabai -m display --focus south)
@@ -125,5 +137,10 @@ fn + ctrl - 0x19 : yabai -m window --space 9; yabai -m space --focus 9
 fn + ctrl - 0x1D : yabai -m window --space 9; yabai -m space --focus 10
 
 fn - f : yabai -m window --toggle float
+
+# Focus the bookmarks strip in Firefox (internal keyboard). Mirrors meh - g.
+fn - g [
+    "firefox" : ~/.scripts/firefox_focus_bookmarks.sh
+]
 
 fn - r : yabai --restart-service
