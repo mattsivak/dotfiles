@@ -50,16 +50,25 @@ def describe(xpi):
 
 
 def profile_in_use(profile):
+    """True only on positive evidence that Firefox holds this profile.
+
+    `lsof +D` recurses the whole profile (~124 MB) and can time out; its
+    failure path must NOT be read as "in use", or a legitimate run is blocked
+    by a slow scan -- which is exactly what happened. Check the lock file
+    directly (O(1)) and fall back to the command line of running processes.
+    """
+    lock = os.path.join(profile, ".parentlock")
     try:
-        out = subprocess.run(["lsof", "+D", profile], capture_output=True,
-                             text=True, timeout=60).stdout
-        if sum(1 for ln in out.splitlines() if "irefox" in ln):
+        o = subprocess.run(["lsof", "--", lock], capture_output=True,
+                           text=True, timeout=20).stdout
+        if any("irefox" in ln for ln in o.splitlines()):
             return True
     except Exception:
-        pass
-    return subprocess.run(["pgrep", "-f", f"--profile {profile}"],
-                          capture_output=True).returncode == 0
-
+        pass  # unknown, not busy
+    if subprocess.run(["pgrep", "-f", f"--profile {profile}"],
+                      capture_output=True).returncode == 0:
+        return True
+    return False
 
 def main():
     ap = argparse.ArgumentParser()

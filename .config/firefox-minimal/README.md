@@ -77,12 +77,34 @@ Since the buttons are gone, these are the whole interface:
 |---|---|
 | `Cmd+L` | address bar / search prompt |
 | `Cmd+F` | find in page |
-| `Cmd+1`…`9` | jump to tab N (the numbers in the strip) |
+| `Cmd+1`…`8` | jump to tab N (the numbers in the strip) |
+| `Cmd+9` | jump to the **last** tab (not tab 9) |
 | `Ctrl+Tab` / `Ctrl+Shift+Tab` | next / previous tab |
 | `Cmd+T` / `Cmd+W` | new / close tab |
 | `Cmd+[` / `Cmd+]` | back / forward |
 | `Cmd+R` | reload |
 | `Cmd+Shift+T` | reopen closed tab |
+
+Bookmarks:
+
+| key | does |
+|---|---|
+| `meh - g` / `fn - g` | focus the bookmarks strip (skhd, external / internal keyboard) |
+| `Cmd+Shift+B` | toggle the bookmarks strip |
+| `Cmd+B` | bookmarks sidebar |
+| `Cmd+D` | bookmark this page |
+| `Cmd+L` then `* query` | search **bookmarks only** |
+
+`*` is one of five address-bar restriction tokens, and they are **prefixes**
+(`* keymap`, not `keymap *`): `*` bookmarks, `^` history, `%` open tabs,
+`#` titles, `$` URLs.
+
+Full generated keymap: `SHORTCUTS.md` — regenerate with
+`python3 tools/dump_keys.py` after a Firefox update.
+
+**`F6` does not focus the bookmarks toolbar**, despite what every guide says;
+measured with real keystrokes, focus never leaves the page. The native route
+is `Cmd+L` then `Tab` twice, which is what the skhd chord replays.
 
 ## Extensions
 
@@ -111,6 +133,50 @@ If you want extensions gone entirely, set `--mz-extensions-display: none` and
 reach them by keyboard: assign shortcuts in `about:addons` → gear →
 **Manage Extension Shortcuts**. uBlock ships `_execute_browser_action` with no
 default key, so you can bind its popup to anything.
+
+## Bookmarks
+
+A second 22px strip under the tab list, one cell per folder:
+
+```
+┌──────────────────────────────────────────────────────┐
+│ 1 Hacker News  2 Lobsters               ⛊  🧩        │
+├──────────────────────────────────────────────────────┤
+│ Hermes  Work  Random  Keyboards                      │
+├──────────────────────────────────────────────────────┤
+```
+
+Folders bright, loose bookmarks dimmed, no favicons, reverse-video gold on the
+focused cell. `meh - g` (or `fn - g`) jumps to it, then arrows walk the
+folders, `Down`/`Enter` opens one, `Esc` leaves.
+
+### Importing from a Chromium browser
+
+```sh
+python3 tools/chromium_bookmarks_to_html.py \
+  --browser helium -o helium-bookmarks.html
+python3 tools/import_bookmarks.py --profile <profile> helium-bookmarks.html
+```
+
+Works for Chrome, Brave, Edge, Vivaldi and Helium. `javascript:`/`data:`
+bookmarklets are skipped rather than carried across silently.
+
+**Importing is not idempotent** — running it twice stacks a second copy of
+everything (9 bookmarks became 18 here). The script reports `before`/`after`
+counts so you can see it; if duplicates do appear:
+
+```sh
+python3 tools/dedupe_bookmarks.py --profile <profile>           # dry run
+python3 tools/dedupe_bookmarks.py --profile <profile> --apply
+```
+
+It de-duplicates rather than restoring `places.sqlite` from a backup, because
+browsing history lives in the same database and a restore would discard it.
+
+Firefox's own importer ignores `PERSONAL_TOOLBAR_FOLDER="true"` even when
+correctly placed — it creates an ordinary folder *named* "Bookmarks Toolbar"
+under the menu — so `import_bookmarks.py` relocates those children onto the
+real toolbar root afterwards.
 
 ## Knobs
 
@@ -188,3 +254,25 @@ Recorded because each one cost a debugging round-trip:
     panel rows. Style the toolbar ones scoped to
     `#nav-bar-customization-target`, or panel rows collapse to 22x22 squares
     with their names clipped away.
+11. **An id→class rename is the worst kind**, because the old selector stays
+    valid and matches nothing. Two bit this config: `.urlbar-go-button` (a
+    class on an `<img>`, and it only appears once autofill completes a URL, so
+    it survives casual inspection) and `#identity-box`, which still exists
+    alongside `#trust-icon-container` and expands to a 180px
+    "Extension (moz-extension://…)" label inside the prompt.
+12. **`SidebarUI` is now `SidebarController`** (Firefox 136+), and
+    `MOZ_MARIONETTE_PORT` is ignored — the port comes from the
+    `marionette.port` pref.
+13. **The sidebar search field cannot be un-rounded from CSS.** `input#input`
+    lives in `moz-input-search`'s shadow root with no exported part; its own
+    sheet reads `var(--input-text-border-radius)`, and that variable *resolves
+    to 0* while the used value stays `9999px`. Only an `adoptedStyleSheet`
+    injected into the shadow root works, which needs userChrome.js.
+14. **`lsof +D <profile>` recurses the whole 124 MB profile** and can time out;
+    treating that as "in use" blocks a legitimate install. Check
+    `.parentlock` directly instead — and note it survives an unclean exit, so
+    its mere existence proves nothing.
+15. **Verify focus claims with real keystrokes.** `gBrowser.addTab()` reports
+    `urlbarFocused: false` where a real `Cmd+T` gives `true`, because the JS
+    path skips the focus logic. `Cmd+T` already opens the search prompt
+    focused — no binding needed.
