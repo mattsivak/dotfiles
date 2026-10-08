@@ -1,9 +1,20 @@
 /* ===========================================================================
- * kagi — terminal / tiling-WM search
+ * kagi — terminal chrome, readable body
  * ---------------------------------------------------------------------------
  * Companion to ~/dotfiles/.config/firefox-minimal. Same ayu dark palette, same
- * Hack Nerd Font Mono, same square-everything rules, so a Kagi tab reads as a
- * continuation of the browser chrome rather than a web page inside it.
+ * square-everything rules, so a Kagi tab reads as a continuation of the
+ * browser chrome rather than a web page inside it.
+ *
+ * TYPOGRAPHY MODEL — hybrid, and the point of the whole file
+ *
+ *   Mono  (Hack Nerd Font Mono)  chrome: urls, nav, filters, counts, buttons.
+ *   Sans  (SF Pro / system)      content: titles and descriptions.
+ *
+ * The all-mono version looked right and read badly. Monospace has no shape
+ * variety, a small x-height, and uniform advance width, so a 12px description
+ * is a grey texture rather than a sentence. Prose goes to the system reading
+ * face; everything that is *machinery* stays mono, which is where the terminal
+ * character actually lives.
  *
  * A result is laid out like a line of program output:
  *
@@ -23,12 +34,8 @@
  *
  * NOTES
  *   - Kagi caps custom CSS at 40,000 characters including whitespace.
- *   - Set Appearance → Theme to DARK first. This themes the dark variant; on
- *     light mode the page keeps light backgrounds Kagi sets outside these
- *     selectors.
- *   - Selectors verified against Kagi's documented list plus two maintained
- *     community themes (kagi-darker 3.0, kagi-google-theme). Kagi's markup
- *     moves; `__sri-*` is the current result-item vocabulary.
+ *   - Set Appearance → Theme to DARK first.
+ *   - Kagi's markup moves; `__sri-*` is the current result-item vocabulary.
  * ======================================================================== */
 
 /* --- palette: ayu dark, matching neovim/sketchybar/ghostty --------------- */
@@ -41,32 +48,51 @@
   --mz-line: #11151c;
   --mz-panel: #0f131a;
   --mz-border: #1e222a;
-  --mz-fg: #bfbdb6;
-  --mz-dim: #565b66;
-  --mz-comment: #636a72;
-  --mz-accent: #e6b450;   /* gold   — focus, active, prompt */
-  --mz-blue: #59c2ff;     /* blue   — titles */
+
+  /* Text ramp. The old ramp bottomed out at #565b66 (2.6:1 on the background)
+   * and then dimmed the *description* to opacity .85 on top of that, so the
+   * one thing you actually read was the hardest thing on the page to see.
+   * Every tier below clears 4.5:1; nothing uses opacity to express hierarchy.
+   *
+   *   fg    #d4d2cc  13.0:1  descriptions, body copy
+   *   soft  #a9a69e   8.4:1  secondary prose
+   *   dim   #8a9099   6.0:1  nav, filters, controls
+   *   faint #6f767f   4.1:1  decorative only — never a word you must read
+   */
+  --mz-fg: #d4d2cc;
+  --mz-soft: #a9a69e;
+  --mz-dim: #8a9099;
+  --mz-faint: #6f767f;
+
+  --mz-accent: #e6b450;   /* gold   — focus, active, matched terms */
+  --mz-blue: #6cc6ff;     /* blue   — titles (lifted from #59c2ff, 8.9:1) */
   --mz-cyan: #39bae6;
-  --mz-green: #aad94c;    /* green  — urls */
+  --mz-green: #b8e05c;    /* green  — urls (lifted from #aad94c) */
   --mz-purple: #d2a6ff;   /* purple — visited */
   --mz-orange: #ff8f40;
   --mz-red: #d95757;
 
-  --mz-font: "Hack Nerd Font Mono", "SF Mono", Menlo, ui-monospace, monospace;
-  --mz-size: 13px;
+  --mz-mono: "Hack Nerd Font Mono", "SF Mono", Menlo, ui-monospace, monospace;
+  --mz-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter",
+             system-ui, "Segoe UI", Roboto, sans-serif;
+
   --mz-gutter: 1.6ch;
 
-  /* Content column width.
+  /* Content widths.
    *
-   * Kagi defaults to a 680px column (max-width:700px on <main>), which on a
-   * wide window leaves most of the screen empty — measured 700px of content
-   * in a 1850px window. A monospace list reads well much wider, so lift the
-   * cap and let it breathe, with a ceiling so lines never become unreadably
-   * long. Set --mz-width to 680px to restore Kagi's own width. */
-  --mz-width: 1100px;
+   * MEASURED TRAP: `#_0_app_content` is a FLEX ROW holding <main> and a 500px
+   * `.right-content-box`. Capping that flex row at 1100px therefore did not
+   * widen the results — it starved them: main measured 495px, which is
+   * NARROWER than Kagi's stock 680px. Widening has to happen on the row, and
+   * main needs its own basis or the sidebar eats the difference.
+   *
+   * 760px of 15px sans is ~75 characters per line — the top of the readable
+   * range. Wider is not better for prose; the old 1100px target was solving
+   * for "fill the window", which is the wrong goal. */
+  --mz-col: 760px;      /* the results column itself */
 
   /* Kagi's own variables — set these and much of the page follows without
-   * needing element rules. Names taken from Kagi's documented theme vars. */
+   * needing element rules. */
   --background-color: var(--mz-bg);
   --color-bg: var(--mz-bg);
   --color-bg-0: var(--mz-bg);
@@ -74,8 +100,8 @@
   --color-bg-2: var(--mz-panel);
   --color-text: var(--mz-fg);
   --color-text-0: var(--mz-fg);
-  --color-text-1: var(--mz-dim);
-  --color-text-2: var(--mz-comment);
+  --color-text-1: var(--mz-soft);
+  --color-text-2: var(--mz-dim);
   --search-result-title: var(--mz-blue);
   --search-result-url: var(--mz-green);
   --result-item-title-border: var(--mz-bg);
@@ -96,33 +122,38 @@
 
 /* --- content width ------------------------------------------------------ */
 
-/* Kagi sets these at :root; overriding them moves the whole grid, which is
- * cleaner than fighting each element. */
 :root,
 .theme_dark,
 .theme_moon_dark,
 .theme_black {
-  --center_content_width: var(--mz-width);
+  --center_content_width: var(--mz-col);
   --center_content_min_width: 0px;
 }
 
-main#main,
-.center-content-box,
-#_0_app_content,
-.app-content-box,
-#layout-v2,
-#page0,
-._0_main-search-results,
-.results-box {
-  max-width: var(--mz-width) !important;
-  width: 100% !important;
+/* LAYOUT SCOPING — the trap that produced an 831px-tall header.
+ *
+ * `.center-content-box` and `.app-content-box` are NOT content-area classes.
+ * The page header carries `.app-content-box`, and both the header and the
+ * top-panel contain their own `.center-content-box`. Setting a flex basis and
+ * max-width on those class names reflowed the header's row into a wrapped
+ * column: measured 126px tall stock -> 831px tall, i.e. ~700px of blank space
+ * above the first result. Layout rules must name `main#main` and
+ * `#_0_app_content`, never the bare classes.
+ *
+ * Stock already lays out a 1550px row holding main (700) + sidebar (500), so
+ * there is ample slack: widening main needs no change to the row at all. Just
+ * raise Kagi's own width variable and give main a matching basis. */
+main#main {
+  flex: 1 1 var(--mz-col) !important;
+  max-width: var(--mz-col) !important;
+  min-width: 0 !important;
 }
 
-/* Keep the column off the window edge on narrow screens. */
-#_0_app_content,
-.app-content-box {
-  padding-inline: 1.5ch !important;
-  box-sizing: border-box !important;
+main#main > #layout-v2,
+main#main > #page0,
+main#main ._0_main-search-results {
+  max-width: 100% !important;
+  width: 100% !important;
 }
 
 /* --- global ------------------------------------------------------------- */
@@ -132,35 +163,41 @@ body,
 #layout-v2,
 #_0_app_content,
 .app-content-box,
-main,
-/* Headings carry Kagi's display face (measured: h3 rendered in "Lufga")
- * and do not inherit from body, so name them explicitly. */
-h1, h2, h3, h4, h5, h6,
-.__sri-title-box,
-input, button, select, textarea {
-  background-color: transparent;
+main {
+  background: var(--mz-bg) !important;
   color: var(--mz-fg);
-  font-family: var(--mz-font) !important;
+}
+
+/* Chrome is mono. Content is not — see the typography model at the top.
+ * Headings carry Kagi's display face ("Lufga") and do NOT inherit from body,
+ * so they have to be named explicitly either way. */
+body,
+input, button, select, textarea,
+.serp-nav, .app-nav, .nav_item, .nav-item,
+.filter-item, .landing-category-select,
+.num_results, .results_meta,
+.__sri-url-box, .__sri-url, .__sri_url_path_box, ._0_URL, .sri-url,
+.__sri-time, .sri-time,
+code, pre, kbd {
+  font-family: var(--mz-mono) !important;
   letter-spacing: normal !important;
 }
 
-html,
-body,
-#layout-v2,
-#_0_app_content,
-.app-content-box,
-main {
-  background: var(--mz-bg) !important;
+h1, h2, h3, h4, h5, h6,
+.__sri-title, .__srgi-title, ._0_TITLE, .__sri-title-box,
+.__sri_title_link,
+.__sri-desc, .__sri-body, ._0_DESC, .sri-desc,
+.instant-answer, .ia-wrapper,
+.widgetItemTitle, .wikipediaResult {
+  font-family: var(--mz-sans) !important;
+  letter-spacing: -0.003em !important;
 }
 
 /* Square everything, kill every transition. A WM does not animate.
  *
  * EXCEPT controls whose shape carries their meaning. Kagi's lens filter uses
  * `.k_ui_toggle_switch`, a 26x16 pill with a sliding knob; squaring it
- * rendered a rectangle inside the pill's own rectangle — the "box inside a
- * box" on the Fediverse Forums lens. Diffed against stock: we add no border
- * there at all, the damage was purely the radius.
- */
+ * rendered a rectangle inside the pill's own rectangle. */
 *,
 *::before,
 *::after {
@@ -184,10 +221,10 @@ input[type="radio"],
   border-radius: 999px !important;
 }
 
-/* The knob is a PSEUDO-ELEMENT (`.k_ui_toggle_switch_bar::after`, 12x12,
- * stock radius 50%). The blanket `*::after` rule squared it, so the toggle
- * read as a square chip inside a rounded pill. An exception list of elements
- * does not cover their pseudo-elements — they need naming separately. */
+/* The knob is a PSEUDO-ELEMENT (`.k_ui_toggle_switch_bar::after`, stock radius
+ * 50%). The blanket `*::after` rule squared it, so the toggle read as a square
+ * chip inside a rounded pill. An exception list of elements does not cover
+ * their pseudo-elements — they need naming separately. */
 .k_ui_toggle_switch::before,
 .k_ui_toggle_switch::after,
 .k_ui_toggle_switch *::before,
@@ -201,9 +238,8 @@ input[type="radio"],
   border-radius: 50% !important;
 }
 
-/* Tone the toggle to the palette: recessed when off, gold when on.
- * Stock bar is #18181a — darker than the surrounding row, i.e. a well, not a
- * raised chip. --mz-line keeps that relationship in ayu. */
+/* Recessed when off, gold when on. Stock bar is darker than the surrounding
+ * row — a well, not a raised chip. */
 .k_ui_toggle_switch_bar {
   background: var(--mz-line) !important;
   border: 1px solid var(--mz-border) !important;
@@ -215,7 +251,6 @@ input:checked + .k_ui_toggle_switch_bar {
   background: var(--mz-accent) !important;
 }
 
-/* Scrollbars to match the chrome. */
 * {
   scrollbar-color: var(--mz-border) transparent !important;
   scrollbar-width: thin !important;
@@ -253,11 +288,9 @@ input:checked + .k_ui_toggle_switch_bar {
   background: var(--mz-panel) !important;
 }
 
-/* No `:` prompt here, deliberately. It shifted Kagi's input 17px right
- * (measured x=70 stock -> x=87) and sat next to Kagi's own search glyph, so
- * the box read as having two leading icons. The browser's address bar already
- * carries that motif; repeating it inside the page is noise.
- */
+/* No `:` prompt here, deliberately. It shifted Kagi's input 17px right and sat
+ * next to Kagi's own search glyph, so the box read as having two leading
+ * icons. The address bar already carries that motif. */
 
 input[type="text"],
 input[type="search"],
@@ -266,8 +299,8 @@ textarea,
 #searchInput {
   background: transparent !important;
   color: var(--mz-fg) !important;
-  font-family: var(--mz-font) !important;
-  font-size: var(--mz-size) !important;
+  font-family: var(--mz-mono) !important;
+  font-size: 13.5px !important;
   caret-color: var(--mz-accent) !important;
   border: none !important;
 }
@@ -278,17 +311,16 @@ textarea,
 }
 
 ::placeholder {
-  color: var(--mz-dim) !important;
+  color: var(--mz-faint) !important;
   opacity: 1 !important;
 }
 
-/* Autosuggest dropdown — a plain list, like the urlbar's. */
 .auto_suggestions,
 .k_ui_dropdown,
 .k_ui_dropdown_data_list {
   background: var(--mz-panel) !important;
   border: 1px solid var(--mz-border) !important;
-  font-family: var(--mz-font) !important;
+  font-family: var(--mz-mono) !important;
 }
 
 .auto_suggestions .item:hover,
@@ -310,7 +342,6 @@ textarea,
   background: transparent !important;
   border: none !important;
   border-bottom: 1px solid var(--mz-border) !important;
-  font-family: var(--mz-font) !important;
 }
 
 /* Kagi already pads these (measured 4px 8px 7px); overriding it shrank the
@@ -321,7 +352,7 @@ textarea,
 .nav-item a {
   color: var(--mz-dim) !important;
   border: none !important;
-  font-size: 12px !important;
+  font-size: 12.5px !important;
   text-transform: lowercase;
 }
 
@@ -349,13 +380,11 @@ textarea,
 /* Exactly ONE element per result carries the rule.
  *
  * Measured on the live SERP: `.sri-group` WRAPS `._0_SRI.search-result` at
- * identical coordinates (30,218 680x93 both), and `.widgetItem` — the "Blast
- * from the Past" rows — also carries `._0_SRI`. Listing all of those drew the
- * guide two and three times over, which is the doubled rule you saw.
+ * identical coordinates, and `.widgetItem` also carries `._0_SRI`. Listing all
+ * of those draws the guide two and three times over.
  *
  * So: `.search-result` and `.__srgi` only, never `.sri-group`, never
- * `._0_SRI` (too broad), and explicitly never `.widgetItem`.
- */
+ * `._0_SRI` (too broad), and explicitly never `.widgetItem`. */
 .search-result,
 .sri-group,
 .sr-group,
@@ -373,26 +402,64 @@ textarea,
   padding: 0 !important;
 }
 
-/* A border-left on the element itself, rather than an absolutely-positioned
- * ::before. Simpler (no positioning context needed), it cannot escape its
- * box, and it stops at the content edge so the margin between results stays
- * a clean gap. */
+/* Separation between results is what makes a list scannable. Whitespace alone
+ * (the earlier 1.9em gap plus a 1px rule) left the page reading as one column
+ * of undifferentiated text — a result had no edges, so the eye had to parse
+ * the type ramp to find where one ended. A card gives it a shape.
+ *
+ * Deliberately subtle: #0f131a is barely above the #0b0e14 page. The goal is
+ * an edge the eye can land on, not a raised panel. With 25 cards on screen,
+ * anything stronger turns the page into luggage. */
 .search-result:not(.widgetItem),
 .__srgi:not(.widgetItem) {
-  margin: 0 0 1.15em 0 !important;
-  padding: 0 0 0 var(--mz-gutter) !important;
-  border-left: 1px solid var(--mz-border) !important;
+  background: var(--mz-panel) !important;
+  border: 1px solid var(--mz-border) !important;
+  border-left: 2px solid var(--mz-border) !important;
+  margin: 0 0 8px 0 !important;
+  padding: 10px 14px !important;
 }
 
 .search-result:not(.widgetItem):hover,
 .__srgi:not(.widgetItem):hover {
+  background: #141922 !important;
   border-left-color: var(--mz-accent) !important;
 }
 
-/* Grouped children indent one level under their parent. */
-.sri-group .__srgi,
-.sr-group .__srgi {
-  margin-left: var(--mz-gutter) !important;
+/* GROUPED RESULTS — the trap this treatment introduces.
+ *
+ * Kagi groups same-site hits as one `.search-result` parent followed by
+ * `.__srgi` children inside a `.sri-group`. Giving every result the same card
+ * flattened that: measured, all five children sat at x=194 with identical
+ * width, so a parent and its four sub-pages read as five unrelated results.
+ *
+ * Children therefore stay UNFILLED and indented — subordinate furniture under
+ * the parent's card, not siblings of it. Measured after: parent x=194 filled,
+ * children x=219 transparent. */
+.sri-group .__srgi:not(.widgetItem),
+.sr-group .__srgi:not(.widgetItem) {
+  background: transparent !important;
+  border: none !important;
+  border-left: 1px solid var(--mz-border) !important;
+  margin: 0 0 4px 2.2ch !important;
+  padding: 4px 0 4px 12px !important;
+}
+
+.sri-group .__srgi:not(.widgetItem):hover,
+.sr-group .__srgi:not(.widgetItem):hover {
+  background: transparent !important;
+  border-left-color: var(--mz-accent) !important;
+}
+
+/* The parent sits flush against the children it owns; the gap goes on the
+ * group as a whole, so a group reads as one unit. */
+.sri-group .search-result:not(.widgetItem),
+.sr-group .search-result:not(.widgetItem) {
+  margin-bottom: 4px !important;
+}
+
+.sri-group,
+.sr-group {
+  margin: 0 0 8px 0 !important;
 }
 
 /* --- title -------------------------------------------------------------- */
@@ -401,19 +468,20 @@ textarea,
 .__srgi-title,
 ._0_TITLE,
 .__sri-title-box {
-  margin: 0 !important;
+  margin: 0 0 1px 0 !important;
   padding: 0 !important;
   border: none !important;
-  line-height: 1.4 !important;
+  line-height: 1.35 !important;
   min-height: 0 !important;
 }
 
-/* The per-result controls sit at the right of the title row; keep them from
- * forcing the row taller than the text needs. */
 .__sri_more_menu_box {
   align-items: center !important;
 }
 
+/* 16px sans against a 14.5px description and a 12.5px url. The old ramp was
+ * 13 / 12 / 11.5 — one pixel apart, which is no hierarchy at all; nothing told
+ * the eye where a result began. */
 .__sri_title_link,
 .__sri-title a,
 .__srgi-title a,
@@ -421,17 +489,17 @@ textarea,
 .newsResultTitle a,
 .videoResultTitle a {
   color: var(--mz-blue) !important;
-  font-family: var(--mz-font) !important;
-  font-size: var(--mz-size) !important;
-  font-weight: bold !important;
+  font-family: var(--mz-sans) !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
   border: none !important;
   text-decoration: none !important;
 }
 
-/* :visited BEFORE :hover — LVHA order. Firefox also restricts which
- * properties a :visited rule may set (colour is permitted, layout is not),
- * and it never applies to a link the page has not actually been to, so this
- * is invisible in a mock and only shows on real history. */
+/* :visited BEFORE :hover — LVHA order. Firefox also restricts which properties
+ * a :visited rule may set, and it never applies to a link the page has not
+ * actually been to, so this is invisible in a mock. */
 .__sri_title_link:visited,
 .__sri-title a:visited,
 .__srgi-title a:visited,
@@ -450,16 +518,13 @@ textarea,
 
 /* --- url ---------------------------------------------------------------- */
 
-/* The URL row is `.__sri-url-box > a.__sri-url > img.favicon + .__sri_url_path_box`.
- * Measured 29px tall against 27px for the title, which is why the rows looked
- * loosely stacked; tighten it and close the gap the hidden favicon leaves. */
 .__sri-url-box,
 .__sri-url,
 .__sri_url_path_box,
 ._0_URL,
 .sri-url {
-  font-family: var(--mz-font) !important;
-  font-size: 11.5px !important;
+  font-family: var(--mz-mono) !important;
+  font-size: 12px !important;
   margin: 0 !important;
   padding: 0 !important;
   border: none !important;
@@ -468,7 +533,7 @@ textarea,
 }
 
 .__sri-url-box {
-  margin-bottom: 1px !important;
+  margin-bottom: 4px !important;
 }
 
 .__sri-url .host,
@@ -480,30 +545,31 @@ textarea,
 .__sri-url .path,
 .__sri_url_path_box .path,
 .path {
-  color: var(--mz-comment) !important;
+  color: var(--mz-faint) !important;
 }
 
 /* --- description -------------------------------------------------------- */
 
+/* The text you came to read. No opacity, no mono, generous leading. */
 .__sri-desc,
 .__sri-body,
 ._0_DESC,
 .sri-desc {
   color: var(--mz-fg) !important;
-  font-family: var(--mz-font) !important;
-  font-size: 12px !important;
-  line-height: 1.55 !important;
+  font-family: var(--mz-sans) !important;
+  font-size: 14.5px !important;
+  font-weight: 400 !important;
+  line-height: 1.6 !important;
   margin: 0 !important;
   padding: 0 !important;
-  opacity: 0.85;
+  opacity: 1 !important;
 }
 
-/* "Summarise" trails the description; tone it to a dim affordance so it does
- * not compete with the result text. */
 .summarize-link,
 ._0_summarize_page,
 ._0_summarize_link {
-  color: var(--mz-comment) !important;
+  color: var(--mz-dim) !important;
+  font-family: var(--mz-mono) !important;
   font-size: 11px !important;
   text-decoration: none !important;
 }
@@ -513,31 +579,30 @@ textarea,
   color: var(--mz-accent) !important;
 }
 
-/* Kagi bolds the matched terms; colour them instead of shouting. */
+/* Matched terms. Gold at normal weight vanished into the line; gold at 600
+ * marks the hit without the shouting of Kagi's stock bold-on-white. */
 .__sri-desc b,
 .__sri-desc strong,
 ._0_DESC b,
 .__sri-body b {
   color: var(--mz-accent) !important;
-  font-weight: normal !important;
+  font-weight: 600 !important;
 }
 
 /* --- per-result furniture ----------------------------------------------- */
 
-/* Favicons are 16px of noise in a monospace list; the hostname already says
- * which site it is. */
+/* Favicons are 16px of noise; the hostname already says which site it is. */
 .__domain-favicon,
 .domain-favicon,
 .sri-favicon {
   display: none !important;
 }
 
-/* Freshness marker, rendered like a shell annotation rather than a pill. */
 .__sri-time,
 .sri-time {
   background: transparent !important;
-  color: var(--mz-comment) !important;
-  font-size: 11px !important;
+  color: var(--mz-dim) !important;
+  font-size: 11.5px !important;
   padding: 0 !important;
 }
 
@@ -547,11 +612,13 @@ textarea,
   color: var(--mz-green) !important;
 }
 
+/* Row controls: present but quiet. 0.35 was effectively invisible against this
+ * background — a control you cannot find is not restraint, it is a bug. */
 .__sri_more_menu_box,
 .sri_more_menu_box,
 ._0_rank-icons,
 .paywall-icon {
-  opacity: 0.35;
+  opacity: 0.55;
 }
 
 .__sri_more_menu_box:hover,
@@ -563,19 +630,11 @@ textarea,
  * Panels: instant answers, widgets, sidebar, wiki
  * ======================================================================== */
 
-/* Only the OUTERMOST container of a block is framed.
- *
- * Measured: `.widgetContent` contains `.widgetItem`, and framing both drew a
- * box inside a box on every "Blast from the Past" row. `.results_meta` was
- * boxing the "67 relevant results in 0.4s" line, which should read as a
- * comment, not a panel.
- */
-/* Stock Kagi gives these NO border and NO background (measured: bd=0px,
- * bg=transparent). A full frame plus my own padding is what produced the
- * boxed "Blast from the Past" with slack under the last row.
- *
- * So: no box. A left accent bar marks a block as set apart, matching the
- * instant-answer treatment, and Kagi keeps its own padding. */
+/* Stock Kagi gives these NO border and NO background. A full frame plus my own
+ * padding produced a boxed "Blast from the Past" with slack under the last
+ * row. So: no box. A left accent bar marks a block as set apart, and Kagi
+ * keeps its own padding. Only the OUTERMOST container of a block is marked —
+ * `.widgetContent` contains `.widgetItem`. */
 .instant-answer,
 .ia-wrapper,
 .widgetContent,
@@ -590,7 +649,6 @@ textarea,
   border-left: 1px solid var(--mz-border) !important;
   border-radius: 0 !important;
   color: var(--mz-fg) !important;
-  font-family: var(--mz-font) !important;
   padding-left: var(--mz-gutter) !important;
 }
 
@@ -599,7 +657,28 @@ textarea,
   border-left-color: var(--mz-accent) !important;
 }
 
-/* Rows inside a framed container: never their own frame or background. */
+/* The right rail is long-form prose — the Wikipedia extract, the answer. It
+ * was rendering in 13px mono, i.e. the worst-reading column on the page. */
+.right-content-box,
+.right-content-box p,
+.right-content-box li,
+.wikipediaResult,
+.instant-answer,
+.ia-wrapper {
+  font-family: var(--mz-sans) !important;
+  font-size: 14.5px !important;
+  line-height: 1.6 !important;
+}
+
+.right-content-box h1,
+.right-content-box h2,
+.right-content-box h3 {
+  font-family: var(--mz-sans) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Rows inside a marked container: never their own frame or background. */
 .widgetItem,
 .widgetItems,
 .widget-simple,
@@ -608,12 +687,39 @@ textarea,
 .widgetContent .widgetItemTitle {
   background: transparent !important;
   border: none !important;
-  font-family: var(--mz-font) !important;
 }
 
 .widgetItemTitle {
-  font-size: 12.5px !important;
+  font-family: var(--mz-sans) !important;
+  font-size: 14px !important;
   line-height: 1.5 !important;
+}
+
+/* Video / news / podcast cards carry their own title classes that none of the
+ * result-title selectors reach, so they were left at the inherited 19.2px
+ * MONO — by a wide margin the loudest, worst-reading text on the page. Pull
+ * them onto the sans ramp at result-title size. */
+.widget-body,
+.videoResultTitle,
+.newsResultTitle,
+.podcastResultTitle,
+.widget-title,
+.widgetItem .widget-body {
+  font-family: var(--mz-sans) !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  color: var(--mz-blue) !important;
+}
+
+/* Card metadata (provider, age) is machinery: mono, small, quiet. */
+.widget-header,
+.widget-provider,
+.widget-time-ago,
+.widget-footer {
+  font-family: var(--mz-mono) !important;
+  font-size: 11.5px !important;
+  color: var(--mz-dim) !important;
 }
 
 /* The results-count line: a dim comment above the list. */
@@ -622,29 +728,11 @@ textarea,
 ._0_app-data-top-panel {
   background: transparent !important;
   border: none !important;
-  color: var(--mz-comment) !important;
-  font-family: var(--mz-font) !important;
+  color: var(--mz-dim) !important;
+  font-family: var(--mz-mono) !important;
   font-size: 11.5px !important;
   padding: 0 !important;
-  margin: 0 0 0.6em 0 !important;
-}
-
-/* Sidebar filters. */
-.sidebar-filter-nav-form,
-.sidebar-filter-nav,
-.filter-item,
-.landing-category-select {
-  background: transparent !important;
-  border-color: var(--mz-border) !important;
-  color: var(--mz-dim) !important;
-  font-family: var(--mz-font) !important;
-  font-size: 12px !important;
-}
-
-.filter-item.--active,
-.filter-item:hover {
-  color: var(--mz-accent) !important;
-  background: transparent !important;
+  margin: 0 0 1.1em 0 !important;
 }
 
 /* ===========================================================================
@@ -656,11 +744,10 @@ textarea,
  * Hard lesson, measured stock-vs-ours on the live page: do NOT impose size on
  * Kagi's controls. Adding padding + min-height to `.filter-item` grew the
  * pills from 199x32 to 240x36 and pushed the row to WRAP onto two lines, and
- * bordering `.more_search_dropdown_box` turned a 24x30 icon into a 51x77
- * empty box beside the kebab.
+ * bordering `.more_search_dropdown_box` turned a 24x30 icon into a 51x77 empty
+ * box beside the kebab.
  *
- * Rule for this whole section: recolour only. Kagi owns the geometry.
- */
+ * Rule for this whole section: recolour only. Kagi owns the geometry. */
 
 button,
 .btn,
@@ -683,11 +770,20 @@ button,
   border-radius: 0 !important;
   box-shadow: none !important;
   color: var(--mz-dim) !important;
-  font-family: var(--mz-font) !important;
+  font-family: var(--mz-mono) !important;
 }
 
 /* The filter pills DO get a frame — Kagi draws one too — but they keep their
- * own padding and height so the row still fits on one line. */
+ * own padding and height so the row still fits on one line.
+ *
+ * The LABEL has to be sized too, not just the pill. Kagi sets `.dd-toggle-label`
+ * to an explicit 16.8px, so it does not inherit the pill's font-size; switching
+ * it to mono at that size widened every pill (measured 199->226, 135->157,
+ * 103->117) and WRAPPED the row onto two lines, which in turn stretched
+ * `.more_search_dropdown_box` from 24x30 to 24x69 — the stray tall box beside
+ * the kebab. Sizing the label to 12.5px keeps each pill at or under its stock
+ * width, so the row cannot wrap. This is the one place where setting a size is
+ * required rather than forbidden: the mono swap is what changed the metrics. */
 .filter-item,
 .dropdown.filter-item,
 .landing-category-select {
@@ -695,10 +791,20 @@ button,
   border: 1px solid var(--mz-border) !important;
   border-radius: 0 !important;
   color: var(--mz-dim) !important;
-  font-family: var(--mz-font) !important;
+  font-family: var(--mz-mono) !important;
+  font-size: 12.5px !important;
+}
+
+.filter-item .dd-toggle-label,
+.filter-item .dd-toggle,
+.dd-toggle-label,
+.landing-category-select .dd-toggle-label {
+  font-family: var(--mz-mono) !important;
+  font-size: 12.5px !important;
 }
 
 .filter-item:hover,
+.filter-item.--active,
 .landing-category-select:hover {
   border-color: var(--mz-accent) !important;
   color: var(--mz-fg) !important;
@@ -725,8 +831,8 @@ button:hover,
   border: 1px solid var(--mz-border) !important;
 }
 
-/* Quick Answer is a genuine bordered button in stock Kagi (measured 1px);
- * the blanket icon-button rule had stripped it. */
+/* Quick Answer is a genuine bordered button in stock Kagi; the blanket
+ * icon-button rule had stripped it. */
 .quick-answer-trigger-link,
 ._0_quick_answer_trigger_btn {
   border: 1px solid var(--mz-border) !important;
@@ -744,12 +850,12 @@ a {
   text-decoration: none;
 }
 
-a:hover {
-  color: var(--mz-accent);
-}
-
 a:visited {
   color: var(--mz-purple);
+}
+
+a:hover {
+  color: var(--mz-accent);
 }
 
 code,
@@ -758,7 +864,8 @@ kbd {
   background: var(--mz-line) !important;
   color: var(--mz-green) !important;
   border: 1px solid var(--mz-border) !important;
-  font-family: var(--mz-font) !important;
+  font-family: var(--mz-mono) !important;
+  font-size: 12.5px !important;
 }
 
 hr,
@@ -772,14 +879,12 @@ hr,
  * Quieten the chrome-of-the-page
  * ======================================================================== */
 
-/* Query-info line and the tooltip nags; the results speak for themselves. */
 ._0_queryInfo,
 .new-tooltip,
 .quick-search-btn {
   display: none !important;
 }
 
-/* Keep the quick-answer trigger, just tone it to the palette — it is useful. */
 .quick-answer-trigger-link svg,
 ._0_quick_answer_trigger_btn,
 ._0_summarize_link {
@@ -788,35 +893,37 @@ hr,
 }
 
 /* ===========================================================================
- * Mobile / iPhone — reviewed at iPhone widths, so make the strip work there
+ * Mobile / iPhone — reviewed at iPhone widths, so make it work there
  * ======================================================================== */
 
 @media (max-width: 768px) {
   :root {
-    --mz-size: 14px;     /* a 13px monospace is too tight on a phone */
     --mz-gutter: 1.1ch;
-    --mz-width: 100%;
+    --mz-col: 100%;
   }
 
-  .search-result,
-  .__srgi {
-    margin-bottom: 1.1em !important;
+  /* The card stays on mobile — it is doing more work on a small screen, not
+   * less. Only the horizontal padding tightens, to buy back line length. */
+  .search-result:not(.widgetItem),
+  .__srgi:not(.widgetItem) {
+    margin-bottom: 6px !important;
+    padding: 9px 10px !important;
+  }
+
+  .sri-group .__srgi:not(.widgetItem),
+  .sr-group .__srgi:not(.widgetItem) {
+    margin-left: 1.2ch !important;
+    padding: 4px 0 4px 9px !important;
+  }
+
+  .__sri_title_link,
+  .__sri-title a,
+  ._0_TITLE a {
+    font-size: 17px !important;
   }
 
   .__sri-desc,
   ._0_DESC {
-    font-size: 13px !important;
-  }
-
-  /* The left tree rule costs horizontal room that matters more on a phone. */
-  .search-result::before,
-  .__srgi::before {
-    display: none;
-  }
-
-  .search-result,
-  .sri-group,
-  .__srgi {
-    padding-left: 0 !important;
+    font-size: 15px !important;
   }
 }
